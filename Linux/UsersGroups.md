@@ -17,7 +17,7 @@
 # Place for future command
 ```
 
-## 3. Add the `john` user to the `developers` group.
+## 3. Create the 'developers' group. Create user 'john' and add `john` and 'developer' user to the `developers` group.
 ```bash
 # Place for future command
 ```
