@@ -76,6 +76,12 @@ Synchronizes your local repository:
 ```bash
 git pull
 ```
+or in case of commits on a few branches and no conflicts:
+
+```bash
+git pull --rebase origin main
+git push origin main
+```
 
 Checks the current repository status:
 
