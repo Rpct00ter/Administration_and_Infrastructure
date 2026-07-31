@@ -1,108 +1,88 @@
-## 1. Git Installation
-Updates the package list and installs Git.
+# Files and Directories Management
+
+## Used commands
+- `ls`
+- `cp`
+- `mv`
+- `rm`
+- `mkdir`
+- `touch`
+- `ln`
+- `find`
+
+# Tasks
+
+## 1. Create the `/opt/projects` directory, including any missing parent directories.
 ```bash
-sudo apt update
-sudo apt install git
+# Place for future command
 ```
 
-Verification that Git has been installed successfully:
+## 2. Create an empty file named `report.txt` in the `/opt/projects` directory.
 ```bash
-git --version
+# Place for future command
 ```
 
-## 2. Git Configuration
-Sets your global username and email address that will be attached to every created commit.
+## 3. Copy the `report.txt` file from `/opt/projects` to the `/tmp` directory.
 ```bash
-git config --global user.name "Displayed Name"
-git config --global user.email "email@address.com"
-```
-> **Note:** I used GitHub's generated private email address instead of my personal email.
-
-Verify the configuration:
-```bash
-git config --list
+# Place for future command
 ```
 
-## 3. SSH Key Pair Generation
-
-Generates a new SSH key pair using the **Ed25519** algorithm. The private key remains on your computer, while the public key will be uploaded to GitHub.
-
+## 4. Create a new directory named `Tasks` in your home directory, then copy `report.txt` into it and rename it to `raport.txt`.
 ```bash
-ssh-keygen -t ed25519 -C "your_email@example.com"
+# Place for future command
 ```
 
-## 4. Start of the SSH Agent
-Start of the SSH authentication agent.
-
+## 5. Move the `report.txt` file from `/tmp` to `/home/student`.
 ```bash
-eval "$(ssh-agent -s)"
-```
-Adds your private key to the agent:
-
-```bash
-ssh-add ~/.ssh/id_ed25519
+# Place for future command
 ```
 
-## 5. Add the Public Key to GitHub
-Copy your PUBLIC key that is located in "~/.ssh" directory and add it to your GitHub account:
-
+## 6. Remove the `/opt/projects` directory along with all of its contents.
 ```bash
-cat ~/.ssh/id_ed25519.pub
-```
-**GitHub → Settings → SSH and GPG keys → New SSH key**
-
-
-## 6. Verify the SSH Connection
-
-```bash
-ssh -T git@github.com
+# Place for future command
 ```
 
-If the output message tells you that you are successfully authenticated... congratulations, you are CONNECTED.
-
-
-## 7. Clone a Repository
-
-Clone the repository using its SSH URL:
-
+## 7. Find all files with the `.log` extension in the `/var` directory.
 ```bash
-git clone <repository_ssh_url>
+# Place for future command
 ```
 
-## 8. Common Git Workflow
-
-Synchronizes your local repository:
-
+## 8. Find all files larger than **500 MB**.
 ```bash
-git pull
+# Place for future command
 ```
 
-Checks the current repository status:
-
+## 9. Find all files modified within the last **24 hours**.
 ```bash
-git status
+# Place for future command
 ```
 
-Stages your changes:
-
+## 10. Find all files owned by the `apache` user.
 ```bash
-git add .
+# Place for future command
 ```
 
-or
-
+## 11. Find all empty files in the `/home` directory.
 ```bash
-git add -A
+# Place for future command
 ```
 
-Creates a commit:
-
+## 12. Find all symbolic links in the `/etc` directory.
 ```bash
-git commit -m "Describe your changes"
+# Place for future command
 ```
 
-Pushes your changes to GitHub:
-
+## 13. Create a symbolic link to the `/var/log/messages` file.
 ```bash
-git push
+# Place for future command
+```
+
+## 14. Remove all files with the `*.tmp` extension.
+```bash
+# Place for future command
+```
+
+## 15. Find all files larger than **1 GB** and display their sizes.
+```bash
+# Place for future command
 ```
