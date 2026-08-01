@@ -37,52 +37,49 @@
 # Place for future command
 ```
 
-## 6. Remove the `/opt/projects` directory along with all of its contents.
+## 6. Find all files with the `.log` extension in the `/var` directory.
 ```bash
 # Place for future command
 ```
 
-## 7. Find all files with the `.log` extension in the `/var` directory.
+## 7. Find all files larger than **500 MB**.
 ```bash
 # Place for future command
 ```
 
-## 8. Find all files larger than **500 MB**.
+## 8. Find all files modified within the last **24 hours**.
 ```bash
 # Place for future command
 ```
 
-## 9. Find all files modified within the last **24 hours**.
+## 9. Find all files owned by the `apache` user.
 ```bash
 # Place for future command
 ```
 
-## 10. Find all files owned by the `apache` user.
+## 10. Find all empty files in the `/home` directory.
 ```bash
 # Place for future command
 ```
 
-## 11. Find all empty files in the `/home` directory.
+## 11. Find all symbolic links in the `/etc` directory.
 ```bash
 # Place for future command
 ```
 
-## 12. Find all symbolic links in the `/etc` directory.
+## 12. Create a symbolic link to the `/var/log/messages` file.
 ```bash
 # Place for future command
 ```
-
-## 13. Create a symbolic link to the `/var/log/messages` file.
+## 13. Find all files larger than **1 GB** and display their sizes.
 ```bash
 # Place for future command
 ```
-
 ## 14. Remove all files with the `*.tmp` extension.
 ```bash
 # Place for future command
 ```
-
-## 15. Find all files larger than **1 GB** and display their sizes.
+## 15. Remove the `/opt/projects` directory along with all of its contents.
 ```bash
 # Place for future command
 ```
