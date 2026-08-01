@@ -14,7 +14,7 @@
 
 ## 1. Create the `/opt/projects` directory, including any missing parent directories.
 ```bash
-# Place for future command
+sudo mkdir -p /opt/projects
 ```
 
 ## 2. Create an empty file named `report.txt` in the `/opt/projects` directory.
