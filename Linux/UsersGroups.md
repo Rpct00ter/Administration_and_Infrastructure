@@ -9,12 +9,12 @@
 
 ## 1. Create a user named `developer` with a home directory.
 ```bash
-# Place for future command
+  useradd -m developer
 ```
 
-## 2. Set a password for the `developer` user.
+## 2. Set or change a password for the `developer` user.
 ```bash
-# Place for future command
+  sudo passwd developer
 ```
 
 ## 3. Create the 'developers' group. Create user 'john' and add `john` and 'developer' user to the `developers` group.
@@ -25,6 +25,11 @@
 ```bash
 # Place for future command
 ```
+## 4. Check if 'john' user is locked
+```bash
+  sudo passwd -S john
+```
+
 ## 5. Delete the 'john' user
 ```bash
 # Place for future command
