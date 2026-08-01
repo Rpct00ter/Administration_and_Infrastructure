@@ -34,19 +34,32 @@
 ```bash
   sudo cat /etc/group
 ```
-## 6. Lock the 'john' user
+## 6. Switch to the 'john' user and start a full login shell. Verify who you are logged as. Then come back to default user.
+```bash
+  su - john
+
+  whoami
+
+  exit
+```
+## 7. Log in as a 'john' user without knowing his password (sudo privileges required).
+```bash
+  sudo -u john -i
+```
+
+## 8. Lock the 'john' user
 ```bash
   sudo passwd -l john
 ```
-## 7. Check if 'john' user is locked
+## 9. Check if 'john' user is locked
 ```bash
   sudo passwd -S john
 ```
-## 8. Unlock the 'john' user
+## 10. Unlock the 'john' user
 ```bash
   sudo passwd -u john
 ```
-## 9. Delete the 'john' user with his home directory
+## 11. Delete the 'john' user with his home directory
 ```bash
   sudo userdel -r john
 ```
