@@ -19,18 +19,30 @@
 
 ## 3. Create the 'developers' group. Create user 'john' and add `john` and 'developer' user to the `developers` group.
 ```bash
-# Place for future command
+groupadd developers
+
+useradd -m john
+
+usermod -aG developers john
+usermod -aG developers developer
 ```
-## 4. Lock the 'john' user
+## 4. Show all users
+```bash
+cat /etc/passwd
+```
+## 5. Show all groups
+```bash
+cat /etc/group
+```
+## 6. Lock the 'john' user
 ```bash
 # Place for future command
 ```
-## 4. Check if 'john' user is locked
+## 7. Check if 'john' user is locked
 ```bash
   sudo passwd -S john
 ```
-
-## 5. Delete the 'john' user
+## 8. Delete the 'john' user
 ```bash
 # Place for future command
 ```
