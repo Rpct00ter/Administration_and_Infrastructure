@@ -21,4 +21,11 @@
 ```bash
 # Place for future command
 ```
-
+## 4. Lock the 'john' user
+```bash
+# Place for future command
+```
+## 5. Delete the 'john' user
+```bash
+# Place for future command
+```
