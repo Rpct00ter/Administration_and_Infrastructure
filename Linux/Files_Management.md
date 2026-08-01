@@ -24,17 +24,19 @@ sudo touch report.txt
 
 ## 3. Copy the `report.txt` file from `/opt/projects` to the `/tmp` directory.
 ```bash
-sudo cp /opt/projects/report.txt /tmp/
+cp /opt/projects/report.txt /tmp/
 ```
 
 ## 4. Create a new directory named `Tasks` in your home directory, then copy `report.txt` into it and rename it to `raport.txt`.
 ```bash
-# Place for future command
+mkdir Tasks
+
+cp /opt/projects/report.txt ~/Tasks/raport.txt
 ```
 
-## 5. Move the `report.txt` file from `/tmp` to `/home/student`.
+## 5. Move the `raport.txt` file from `~/Tasks` to `/tmp`.
 ```bash
-# Place for future command
+mv ~/Tasks/raport.txt /tmp/
 ```
 
 ## 6. Find all files with the `.log` extension in the `/var` directory.
