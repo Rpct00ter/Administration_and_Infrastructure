@@ -41,20 +41,24 @@ mv ~/Tasks/raport.txt /tmp/
 
 ## 6. Find all files with the `.log` extension in the `/var` directory.
 ```bash
-# Place for future command
+sudo find /var -type f -name "*.log"
 ```
 
 ## 7. Find all files larger than **500 MB**.
 ```bash
-# Place for future command
+sudo find / -type f -size +500M
 ```
 
 ## 8. Find all files modified within the last **24 hours**.
 ```bash
-# Place for future command
+find / -type f -mtime -1
+```
+(or in minutes):
+```bash
+find / -type f -mmin -1440
 ```
 
-## 9. Find all files owned by the `apache` user.
+## 9. Find all files owned by the `john` user.
 ```bash
 # Place for future command
 ```
