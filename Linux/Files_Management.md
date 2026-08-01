@@ -19,7 +19,7 @@ sudo mkdir -p /opt/projects
 
 ## 2. Create an empty file named `report.txt` in the `/opt/projects` directory.
 ```bash
-# Place for future command
+sudo touch report.txt
 ```
 
 ## 3. Copy the `report.txt` file from `/opt/projects` to the `/tmp` directory.
