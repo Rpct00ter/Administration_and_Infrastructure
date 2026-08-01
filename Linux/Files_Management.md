@@ -60,32 +60,40 @@ find / -type f -mmin -1440
 
 ## 9. Find all files owned by the `john` user.
 ```bash
-# Place for future command
+find / -type f -user john
 ```
 
 ## 10. Find all empty files in the `/home` directory.
 ```bash
-# Place for future command
+find /home -type f -empty
 ```
 
 ## 11. Find all symbolic links in the `/etc` directory.
 ```bash
-# Place for future command
+find /etc -type l
 ```
 
 ## 12. Create a symbolic link to the `/var/log/messages` file.
 ```bash
-# Place for future command
+ln -s /var/log/messages ~/messages
 ```
-## 13. Find all files larger than **1 GB** and display their sizes.
+
+## 13. Remove a symbolic link to the `/var/log/messages` file.
 ```bash
-# Place for future command
+rm ~/messages
 ```
-## 14. Remove all files with the `*.tmp` extension.
+
+## 14. Find all files larger than **1 GB** and display their sizes.
 ```bash
-# Place for future command
+sudo find / -type f -size +1G -exec ls -lh {} \;
+```
+> **Note:** **{}** is replaced with the current file and **\;** marks the end of the command.
+## 14. Remove all files with the `*.tmp` extension in the ~\Downloads directory.
+```bash
+find ~\Downloads -type f -name "*.tmp" -delete
 ```
 ## 15. Remove the `/opt/projects` directory along with all of its contents.
 ```bash
-# Place for future command
+sudo rm -r /opt/projects
 ```
+> **Note:** **-r** means recursive and can be used with **-f** which means force (-rf)
