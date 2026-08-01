@@ -28,7 +28,7 @@
 ```
 ## 4. Show all users
 ```bash
-  sudocat /etc/passwd
+  sudo cat /etc/passwd
 ```
 ## 5. Show all groups
 ```bash
