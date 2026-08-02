@@ -11,12 +11,12 @@
 
 ## 1. Save the output of the `ls` command to a file.
 ```bash
-# Place for future command
+ls -la > ~/Tasks/results.txt
 ```
 
 ## 2. Append the output of the `date` command to an existing file.
 ```bash
-# Place for future command
+date >> ~/Tasks/results.txt
 ```
 
 ## 3. Save only error messages to a file named `errors.log`.
