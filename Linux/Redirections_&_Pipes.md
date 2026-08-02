@@ -21,15 +21,19 @@ date >> ~/Tasks/results.txt
 
 ## 3. Save only error messages to a file named `errors.log`.
 ```bash
-# Place for future command
+ls imaginary_file 2> errors.log
 ```
 
 ## 4. Redirect both standard output (`stdout`) and standard error (`stderr`) to the same output stream.
 ```bash
-# Place for future command
+ls ~/ imaginary_file > output.log 2>&1
+```
+## 5. Hide generated error messages.
+```bash
+ls ~/ imaginary_file 2> /dev/null
 ```
 
 ## 5. Display the output on the screen and save it to a file at the same time using `tee`.
 ```bash
-# Place for future command
+ping google.com | tee test_ping.log
 ```
