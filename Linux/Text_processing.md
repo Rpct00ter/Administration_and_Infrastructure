@@ -16,57 +16,64 @@
 
 ## 1. Search for the text `ERROR` in all `.log` files under `/var/log`.
 ```bash
-# Place for future command
+grep "ERROR" /var/log/*.log
+```
+or for recursive search
+```bash
+grep -ri --include="*.log" "error" /var/log
 ```
 
 ## 2. Display all lines that begin with the word `root`.
 ```bash
-# Place for future command
+grep "^root" /etc/passwd
 ```
 
 ## 3. Display all lines that do **not** contain the word `ssh`.
 ```bash
-# Place for future command
+grep -v "ssh" /etc/passwd
 ```
 
-## 4. Count the number of occurrences of the word `ERROR`.
+## 4. Count the number of occurrences of the word `ERROR` in error.log file.
 ```bash
-# Place for future command
+grep -o "ERROR" errors.log | wc -l
 ```
 
 ## 5. Display only the username column from the `/etc/passwd` file.
 ```bash
-# Place for future command
+cut -d: -f1 /etc/passwd
 ```
-
+> **Note:** **-d** states the delimiter and **-f** states the field number
 ## 6. Display only unique usernames from a text file.
 ```bash
-# Place for future command
+cut -d: -f1 /etc/passwd | sort | uniq 
 ```
 
-## 7. Sort a text file by the second column.
+## 7. Sort a file by the second column.
 ```bash
-# Place for future command
+sort -t: -k2 /etc/passwd
 ```
 
-## 8. Replace every occurrence of `localhost` with `server01` in a configuration file.
+## 8. Replace every occurrence of `root` with `toor` in a results.txt file. Create backup.
 ```bash
-# Place for future command
+sed -i.bak 's/root/toor/g' ~/Tasks/results.txt
 ```
 
-## 9. Display the ten most frequently occurring words in a log file.
+## 9. Display the ten most frequently occurring words in a results.txt file.
 ```bash
-# Place for future command
+cat results.txt | tr -cs '[:alnum:]' '\n' | sort | uniq -c | sort -nr | head -10
 ```
+> **Note:**
+-tr (translates characters), c (complements everything except alphanumeric characters), s (squeezes repeated delimiters), 
+'[:alnum:]' (letters and digits [alphanumeric]), '\n' (replace delimiters with newlines).
 
 ## 10. Display only unique IP addresses from a log file.
 ```bash
-# Place for future command
+grep -oE '([0-9]{1,3}\.){3}[0-9]{1,3}' file.log | sort -u
 ```
 
 ## 11. Compare two text files and display their differences.
 ```bash
-# Place for future command
+diff file.log errors.log
 ```
 
 ## 12. Sort a text file and remove duplicate lines.
