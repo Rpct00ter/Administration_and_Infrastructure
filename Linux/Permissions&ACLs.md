@@ -70,18 +70,21 @@ ls -al data.txt
 ```bash
 sudo find / -type f -perm -1000
 ```
-
+> **Note:** If Sticky Bit is set, that means the users can normally delete only their own files.
+> 
 ## 11. Find all files with the SUID bit set.
 
 ```bash
 sudo find / -type f -perm -4000 2>/dev/null
 ```
+> **Note:** If SUID is set, the program runs with the permissions of the file's owner instead of mine.
 
 ## 12. Find all files with the SGID bit set.
 
 ```bash
 sudo find / -type f -perm -2000 2>/dev/null
 ```
+> **Note:** If a directory has SGID set, newly created files inherit the directory's group.
 
 ## 13. Grant the developer user permission to execute commands using `sudo`.
 
