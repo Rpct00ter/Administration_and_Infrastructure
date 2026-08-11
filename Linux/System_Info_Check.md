@@ -14,35 +14,35 @@
 ## 1. Check the amount of free and total RAM in the system.
 
 ```bash
-# Place for future command
+free -h
 ```
 
 ## 2. Check how long the system has been running since the last boot.
 
 ```bash
-# Place for future command
+uptime
 ```
 
 ## 3. Display information about the currently running kernel.
 
 ```bash
-# Place for future command
+uname -a
 ```
 
 ## 4. Display all currently loaded kernel modules.
 
 ```bash
-# Place for future command
+lsmod
 ```
 
 ## 5. Load the `dummy` kernel module.
 
 ```bash
-# Place for future command
+sudo modprobe dummy
 ```
 
 ## 6. Display detailed information about the `xfs` kernel module.
 
 ```bash
-# Place for future command
+modinfo xfs
 ```
