@@ -31,22 +31,30 @@ sudo journalctl -f
 
 ## 5. Find all failed SSH login attempts.
 ```bash
-# Place for future command
+sudo journalctl -u sshd | grep "Failed password"
 ```
 
 ## 6. Write a custom message named "Linux+ practice" to the system log.
 ```bash
-# Place for future command
+logger "Linux+ practice"
 ```
 
 ## 7. Find all successful logins for the `root` user.
 ```bash
-# Place for future command
+sudo journalctl | grep -E "Accepted .* for root|session opened for user root"
 ```
 
 ## 8. Restart the `rsyslog` service and verify if it's running.
 ```bash
-# Place for future command
+sudo systemctl restart rsyslog
+```
+or if not running:
+```bash
+sudo systemctl enable --now rsyslog
+```
+then:
+```bash
+sudo systemctl status rsyslog
 ```
 
 ## 9. Display the configuration file used by `rsyslog`.
