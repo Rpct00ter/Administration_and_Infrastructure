@@ -47,50 +47,53 @@ jobs
 fg %1
 ```
 
-## 6. Change the priority of the process with PID `1234` to `10`.
+## 5. Change the priority of the process with PID `1234` to `10`.
+
+```bash
+sudo renice 10 -p 1234
+```
+>>**NOTE**: <br />
+>>-20  --> highest priority<br />
+>>  0  -----> default<br />
+>>+19  --> lowest priority
+## 7. Terminate the 'sleep' process.
+
+```bash
+kill -1 <PID>
+```
+
+## 6. Display all open files used by the process with PID `5678`.
+
+```bash
+sudo lsof -p 5678
+```
+
+## 7. Limit the CPU usage of the specified process.
 
 ```bash
 # Place for future command
 ```
 
-## 7. Send the `SIGHUP` signal to the `nginx` process.
+## 8. Run a command with a time limit of **60 seconds**.
 
 ```bash
-# Place for future command
+timeout 60s sleep 300
 ```
 
-## 8. Display all open files used by the process with PID `5678`.
+## 9. Check the resource limits applicable to the current shell.
 
 ```bash
-# Place for future command
+ulimit -a
 ```
 
-## 9. Limit the CPU usage of the specified process.
+## 10. Change the soft limit for the number of open files for the current session.
 
 ```bash
-# Place for future command
+ulimit -n 512
 ```
 
-## 10. Run a command with a time limit of **60 seconds**.
+## 11. Display the process tree starting from the `systemd` process.
 
 ```bash
-# Place for future command
-```
-
-## 11. Check the resource limits applicable to the current shell.
-
-```bash
-# Place for future command
-```
-
-## 12. Change the soft limit for the number of open files for the current session.
-
-```bash
-# Place for future command
-```
-
-## 13. Display the process tree starting from the `systemd` process.
-
-```bash
-# Place for future command
+pstree -p 1
 ```
