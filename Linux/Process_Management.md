@@ -16,34 +16,35 @@
 
 # Tasks
 
-## 1. Find the process ID (PID) of the `nginx` process and terminate it.
+## 1. Use the 'sleep 6000' command in the background. Find process ID (PID) and terminate it.
 
 ```bash
-# Place for future command
+sleep 6000 &
+pgrep -a sleep
+kill <PID>
 ```
 
 ## 2. Display the processes consuming the most RAM.
 
 ```bash
-# Place for future command
+ps aux --sort=-%mem | head
 ```
 
 ## 3. Display the process consuming the most CPU time.
 
 ```bash
-# Place for future command
+ps aux --sort=-%cpu | head
 ```
 
-## 4. Start the `sleep 300` process in the background.
+## 4. Move a running process from the background to the foreground.
 
 ```bash
-# Place for future command
+# Check background jobs:
+jobs
 ```
-
-## 5. Move a running process from the background to the foreground.
-
 ```bash
-# Place for future command
+# Sends first displayed job to the foreground
+fg %1
 ```
 
 ## 6. Change the priority of the process with PID `1234` to `10`.
