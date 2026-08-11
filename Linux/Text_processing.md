@@ -78,5 +78,5 @@ diff file.log errors.log
 
 ## 12. Sort a text file and remove duplicate lines.
 ```bash
-# Place for future command
+sort file.txt | uniq
 ```
