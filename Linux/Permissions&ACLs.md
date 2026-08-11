@@ -7,6 +7,7 @@
 * `setfacl`
 * `getfacl`
 * `umask`
+* `visudo`
 
 # Tasks
 
