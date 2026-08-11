@@ -11,22 +11,22 @@
 
 ## 1. Display the last 20 system log entries.
 ```bash
-# Place for future command
+sudo journalctl -n 20
 ```
 
 ## 2. Display the last 20 log entries for the `sshd` service.
 ```bash
-# Place for future command
+sudo journalctl -u sshd -n 20
 ```
 
 ## 3. Display today's authentication log entries.
 ```bash
-# Place for future command
+sudo journalctl --since today
 ```
 
 ## 4. Follow system logs in real time.
 ```bash
-# Place for future command
+sudo journalctl -f
 ```
 
 ## 5. Find all failed SSH login attempts.
