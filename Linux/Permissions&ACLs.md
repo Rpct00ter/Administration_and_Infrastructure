@@ -13,43 +13,43 @@
 ## 1. Grant the owner full permissions, the group read and write permissions, and deny all permissions to other users for the `data.txt` file.
 
 ```bash
-# Place for future command
+sudo chmod 760 data.txt
 ```
 
 ## 2. Change the owner of `backup.tar` to the 'admin' user and the group to 'backup`.
 
 ```bash
-# Place for future command
+sudo chown admin:backup backup.tar
 ```
 
 ## 3. Add the john user to the developers group.
 
 ```bash
-# Place for future command
+sudo usermod -aG developers john
 ```
 
 ## 4. Grant the john user read permission to the specified file using an ACL.
 
 ```bash
-# Place for future command
+sudo setfacl -m u:john:r data.txt
 ```
 
 ## 5. Remove all ACL entries from the specified file.
 
 ```bash
-# Place for future command
+sudo setfacl -b data.txt
 ```
 
 ## 6. Display the ACL entries for the specified file.
 
 ```bash
-# Place for future command
+getfacl data.txt
 ```
 
 ## 7. Check the current `umask` value.
 
 ```bash
-# Place for future command
+umask
 ```
 
 ## 8. Set a new `umask` value for the current session.
@@ -100,4 +100,3 @@
 # Place for future command
 ```
 
-> **Note:** Removing "-r" will delete the user but keep his home directory content
