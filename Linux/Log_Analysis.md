@@ -62,7 +62,7 @@ sudo systemctl status rsyslog
 cat /etc/rsyslog.conf
 ```
 
-## 10. Check the status of the `logrotate` service or configuration.
+## 10. Check the status of the `logrotate` service and configuration.
 ```bash
 systemctl status logrotate.timer
 ```
@@ -73,15 +73,27 @@ sudo cat /etc/logrotate.conf
 
 ## 11. Force log rotation.
 ```bash
-# Place for future command
+sudo logrotate -f /etc/logrotate.conf
 ```
 
 ## 12. List all rotated log files in `/var/log`.
 ```bash
-# Place for future command
+ls -lah /var/log/*.log.*
 ```
 ## 13. Configure `auditd` to log every access to the `/opt/projects/report.txt` file.
 ```bash
-# Place for future command
+sudo auditctl -w /opt/projects/report.txt -p rwxa -k report_file
 ```
-
+to test it:
+```bash
+cat /opt/projects/report.txt
+sudo ausearch -k report_file
+```
+To make it persistent after reboot rule should be added to /rules.d:
+```bash
+sudo vim /etc/audit/rules.d/report_file.rules
+```
+after opening the file the rule can be added:
+```bash
+-w /opt/projects/report.txt -p rwxa -k report_file
+```
