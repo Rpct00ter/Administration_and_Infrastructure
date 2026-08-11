@@ -59,13 +59,17 @@ sudo systemctl status rsyslog
 
 ## 9. Display the configuration file used by `rsyslog`.
 ```bash
-# Place for future command
+cat /etc/rsyslog.conf
 ```
 
 ## 10. Check the status of the `logrotate` service or configuration.
 ```bash
-# Place for future command
+systemctl status logrotate.timer
 ```
+```bash
+sudo cat /etc/logrotate.conf
+```
+
 
 ## 11. Force log rotation.
 ```bash
