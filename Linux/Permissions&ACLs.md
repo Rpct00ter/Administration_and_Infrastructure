@@ -51,52 +51,56 @@ getfacl data.txt
 ```bash
 umask
 ```
-
+> **Note:** 'umask' controls which permissions are automatically removed when new files and directories are created.
 ## 8. Set a new `umask` value for the current session.
 
 ```bash
-# Place for future command
+umask 077
 ```
 
-## 9. Create a new file and check which permissions were assigned to it based on the current `umask`.
+
+## 9. Display the permissions of the specified file.
 
 ```bash
-# Place for future command
+ls -al data.txt
 ```
 
-## 10. Display the permissions of the specified file.
+## 10. Find all files with the Sticky Bit set.
 
 ```bash
-# Place for future command
+sudo find / -type f -perm -1000
 ```
 
-## 11. Find all files with the Sticky Bit set.
+## 11. Find all files with the SUID bit set.
 
 ```bash
-# Place for future command
+sudo find / -type f -perm -4000 2>/dev/null
 ```
 
-## 12. Find all files with the SUID bit set.
+## 12. Find all files with the SGID bit set.
 
 ```bash
-# Place for future command
+sudo find / -type f -perm -2000 2>/dev/null
 ```
 
-## 13. Find all files with the SGID bit set.
+## 13. Grant the developer user permission to execute commands using `sudo`.
 
 ```bash
-# Place for future command
+sudo usermod -aG sudo developer
 ```
 
-## 14. Grant the developer user permission to execute commands using `sudo`.
+## 14. Remove the developer user's permission to execute commands using `sudo`.
 
 ```bash
-# Place for future command
+sudo gpasswd -d developer sudo
 ```
 
-## 15. Remove the developer user's permission to execute commands using `sudo`.
-
+## 15. Using 'sudoers' grant the developer user permission to use 'sudo', but only to change ip addresses.
 ```bash
-# Place for future command
+#Adds and opens new modular ruleset for 'developer' user
+sudo visudo -f /etc/sudoers.d/developer
 ```
-
+Line that adds custom sudo rule enabling developer to change ip addresses:
+```bash
+developer ALL=(root) /usr/sbin/ip addr add *, /usr/sbin/ip addr del *
+```
