@@ -12,6 +12,10 @@
 ```bash
 sudo tar -cJf backup.tar.xz /etc
 ```
+Now it's possible to extract it using:
+```bash
+sudo tar -xJf backup.tar.xz
+```
 
 ## 2. Display the contents of the `backup.tar.xz` archive without extracting it.
 
@@ -29,4 +33,16 @@ sudo find /etc -type f -mtime -7 -print0 | sudo tar --null -T - -cJf recent_file
 ```bash
 find . -type f -name "*.log" -exec 7z a my_logs.7z {} +
 ```
+Now it's possible to extract them using:
+```bash
+7z x my_logs.7z
+```
 
+## 5. Compress report.txt file.
+```bash
+xz -k report.txt
+```
+File can be decompressed using:
+```bash
+unxz -d report.txt.xz
+```
