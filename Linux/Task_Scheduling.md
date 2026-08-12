@@ -45,17 +45,21 @@ Added new line:
 ## 2. Display all `cron` jobs scheduled by the `root` user.
 
 ```bash
-# Place for future command
+sudo crontab -l -u root
 ```
 
 ## 3. Remove all `cron` jobs belonging to the current user.
 
 ```bash
-# Place for future command
+crontab -r
 ```
-
+>**Note**: 'anacron' can be used instead of 'cron' in the non-continous systems (like for example laptops :) )
 ## 4. Schedule a one-time command using `at` and display the list of pending jobs.
-
+Schedules a one-time run of a script at 3:00
 ```bash
-# Place for future command
+echo '/home/developer/daily_check.sh' | at 03:00
+```
+Displays the list of pending jobs:
+```bash
+atq
 ```
