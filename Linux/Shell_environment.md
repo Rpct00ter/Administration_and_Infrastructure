@@ -15,9 +15,9 @@
 ## 1. Create an alias `ll` available only to the current user.
 
 ```bash
-# Place for future command
+alias ll='ls -lah
 ```
-
+>**Note**: Alias will disappear if the current shell section is terminated. To make it persistent it should be added '~/.bashrc'.
 ## 2. Add the `/opt/scripts` directory to the `PATH` environment variable for the current session.
 
 ```bash
