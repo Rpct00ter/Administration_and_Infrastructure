@@ -10,6 +10,7 @@
 * `tcpdump`
 * `traceroute`
 * `traceroute`
+* `wireshark`
 
 # Tasks
 
@@ -118,4 +119,8 @@ sudo nmap -sS --top-ports 100 <TARGET_IP>
 ```
 ```bash
 sudo nmap -O -T1 <TARGET_IP>
+```
+## 18. Open Wireshark and capture network traffic.
+```bash
+wireshark
 ```
