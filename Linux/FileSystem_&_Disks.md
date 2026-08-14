@@ -9,7 +9,6 @@
 * `mount`
 * `umount`
 * `mkfs`
-* `e2label`
 * `fdisk`
 * `parted`
 
@@ -43,39 +42,40 @@ sudo fdisk /dev/sdb
 ```
 
 
-### 6. Format the specified partition with the `ext4` file system.
+### 6. Format the specified partition with the `XFS` filesystem.
 ```bash
-# Place for future command
+sudo mkfs.xfs /dev/sdb1
 ```
 
-
-### 7. Display the file system label of the specified partition.
+### 7. Display the filesystem label of the specified partition.
 ```bash
-# Place for future command
+sudo blkid /dev/sdb1
 ```
 
-
-### 8. Change the label of an `ext4` file system.
+### 8. Display all currently active mount points.
 
 ```bash
-# Place for future command
+findmnt
+#or
+df -h
 ```
 
-### 9. Display all currently active mount points.
+### 9. Mount a filesystem .
 
 ```bash
-# Place for future command
+#First create a directory to access the system (we can name it whatever):
+sudo mkdir -p /mnt/exampleName
+
+#Then filesystem can be mounted:
+sudo mount /dev/sdb1 /mnt/exampleName
 ```
 
-
-### 10. Mount a file system using its UUID.
-
-```bash
-# Place for future command
-```
-
-### 11. Mount the NFS share available at `192.168.1.100:/share`.
+### 10. Mount the NFS share available at `192.168.1.100:/share`.
 
 ```bash
-# Place for future command
+#First local mount point should be created:
+sudo mkdir -p /mnt/nfs_share
+
+#Then nfs share can be mounted:
+sudo mount -t nfs 192.168.1.100:/share /mnt/nfs_share
 ```
