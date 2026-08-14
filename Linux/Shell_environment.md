@@ -1,4 +1,4 @@
-# 15. Shell Environment
+# Shell Environment
 ## Used commands
 
 * `alias`
