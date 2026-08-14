@@ -1,5 +1,4 @@
 # 6. Networking
-
 ## Used commands
 
 * `ip`
@@ -9,7 +8,8 @@
 * `nmap`
 * `arp`
 * `tcpdump`
-* `firewalld`
+* `traceroute`
+* `traceroute`
 
 # Tasks
 
@@ -85,35 +85,37 @@ sudo tcpdump -i eth0 -c 20
 ## 12. Determine the route packets take to a remote host.
 
 ```bash
-# Place for future command
+traceroute 8.8.8.8
 ```
 ## 13. Display all active network connections, including the local and remote addresses and ports.
 
 ```bash
-# Place for future command
+ss -tun
 ```
 ## 14. Identify the default gateway used by the system.
 
 ```bash
-# Place for future command
+ip route
 ```
 ## 15. Determine which services are listening locally and which ports are externally reachable (compare the results of ss with an Nmap scan of your own machine).
 
 ```bash
-# Place for future command
+ss -lnt
+```
+compare it with
+```bash
+sudo nmap -O -sV <TARGET_IP>
 ```
 ## 16. Discover which hosts are currently online in your subnet.
 
 ```bash
-# Place for future command
+sudo nmap -sn <SUBNET>/24
 ```
-## 17. Determine which ports are open on another host in your network.
+## 17. Perform a low-noise reconnaissance to determine which ports are open on another host in your network. Determine it's OS.
 
 ```bash
-# Place for future command
+sudo nmap -sS --top-ports 100 <TARGET_IP>
 ```
-## 18. Perform a low-noise reconnaissance scan of a lab host.
-
 ```bash
-# Place for future command
+sudo nmap -O -T1 <TARGET_IP>
 ```
