@@ -34,7 +34,7 @@ ip route
 ## 4. Test connectivity to a remote host and determine whether packets are being lost.
 
 ```bash
-# Place for future command
+ping -c 10 8.8.8.8
 ```
 
 ## 5. Find the process listening on port `8080`.
