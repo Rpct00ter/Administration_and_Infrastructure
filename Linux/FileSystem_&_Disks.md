@@ -17,29 +17,29 @@
 
 ### 1. Display disk space usage for the `/home` directory.
 ```bash
-# Place for future command
+sudo du -h /home
 ```
 
 ### 2. Display the disk usage of all mounted file systems.
 ```bash
-# Place for future command
+df -h
 ```
 
 ### 3. Display the UUIDs of all block devices.
 ```bash
-# Place for future command
+blkid
 ```
 
 
 ### 4. Check inode usage on all file systems.
 ```bash
-# Place for future command
+df -i
 ```
 
 
 ### 5. Create a new partition on the `/dev/sdb` disk.
 ```bash
-# Place for future command
+sudo fdisk /dev/sdb
 ```
 
 
