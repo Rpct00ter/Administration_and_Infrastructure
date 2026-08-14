@@ -10,7 +10,6 @@
 * `umount`
 * `mkfs`
 * `fdisk`
-* `parted`
 
 ## Tasks
 
