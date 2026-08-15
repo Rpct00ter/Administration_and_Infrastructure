@@ -172,14 +172,14 @@ jq -r '.addons[] | select(.type == "extension") | "\(.defaultLocale.name) — \(
 ### 7. Archive the most important files.
 
 ```bash
-# Place for future command
+sudo tar -cJpf /backup/archives/ImportantProject.tar.xz ~/Documents/ImportantProject
 ```
 ---
 
 ### 8. Create a complete disk image backup on an external device using Clonezilla.
 
 ```bash
-# Place for future command
+#Place for future command
 ```
 
 ---
