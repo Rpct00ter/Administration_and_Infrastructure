@@ -14,7 +14,40 @@
 #### 1a. Create a new partition on a different drive for storing backups.
 
 ```bash
-# Place for future command
+#1. Check available disks and partitions
+lsblk -f
+
+#2. Open the partitioning tool for the new disk (replace /dev/sdX with the correct disk) and create a new partition.
+sudo fdisk /dev/sdX
+
+#3. Check if the new partition was created
+lsblk
+
+#4. Create an ext4 filesystem on the new partition (deletes existing data on the selected partition)
+sudo mkfs.ext4 /dev/sdX1
+
+#5. Create the backup mount point
+sudo mkdir /backup
+
+#6. Temporarily mount the new partition
+sudo mount /dev/sdX1 /backup
+
+#7. Check if the partition is mounted correctly
+findmnt /backup
+
+#8. Get the UUID of the new partition
+sudo blkid /dev/sdX1
+
+#9. Backup fstab before modifying it
+sudo cp /etc/fstab /etc/fstab.backup
+
+#10. Add the new partition to fstab so it mounts automatically at boot
+UUID=... /backup ext4 defaults 0 2
+
+#11. Test if the partition mounts automatically
+sudo umount /backup
+sudo mount -a
+findmnt /backup
 ```
 
 #### 1b. Create a Btrfs subvolume on the current drive for storing backups.
