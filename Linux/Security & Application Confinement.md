@@ -4,7 +4,6 @@
 * `aa-status`
 * `aa-enforce`
 * `aa-complain`
-* `aa-disable`
 * `firejail`
 * `firejail --list`
 * `getenforce`
