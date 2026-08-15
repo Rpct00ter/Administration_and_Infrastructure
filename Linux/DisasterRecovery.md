@@ -1,9 +1,12 @@
+DisasterRecovery
 Used technology:
 Clonezilla
 
 1.) Local Copy of the most important directories like /home and /etc
 1.a New partition on a diffrent drive
 1.b Creating subvolume on a current drive using btrfs
+sudo btrfs subvolume create /@backup
+
 2.) Backup information about downloaded packets and packages.
 3.) Backup information about installed disks
 4.) Backup information about browser extensions
