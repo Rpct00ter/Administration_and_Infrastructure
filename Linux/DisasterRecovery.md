@@ -114,7 +114,27 @@ sudo rsync -aAXHv --dry-run /etc/ /backup/etc/
 ### 3. Back up information about downloaded packages and package repositories.
 
 ```bash
-# Place for future command
+#1. Create package backup directory
+sudo mkdir -p /backup/packages
+
+#2. Backup information about all installed packages
+dpkg-query -W -f='${binary:Package}\t${Version}\n' | sudo tee /backup/packages/installed-packages.txt > /dev/null
+
+#3. Backup manually installed packages
+apt-mark showmanual | sudo tee /backup/packages/manually-installed.txt > /dev/null
+
+#4. Backup APT repository configuration
+sudo cp -a /etc/apt /backup/packages/apt-repositories
+
+#5. Create a readable list of configured repositories
+grep -RhsE '^[[:space:]]*(deb|deb-src)[[:space:]]' /etc/apt/sources.list /etc/apt/sources.list.d/ 2>/dev/null | sudo tee /backup/packages/repositories.txt > /dev/null
+
+#6. Backup downloaded .deb packages currently stored in APT cache
+sudo mkdir -p /backup/packages/downloaded-packages
+sudo rsync -a /var/cache/apt/archives/ /backup/packages/downloaded-packages/
+
+#7. Check the backup
+find /backup/packages -maxdepth 2 -type f -print
 ```
 
 ---
