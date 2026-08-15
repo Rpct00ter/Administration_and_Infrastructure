@@ -142,7 +142,11 @@ find /backup/packages -maxdepth 2 -type f -print
 ### 4. Back up information about installed disks and storage devices.
 
 ```bash
-# Place for future command
+#1. Backup information about disks and partitions
+sudo fdisk -l | sudo tee /backup/system-info/disks.txt > /dev/null
+
+#2. Backup UUID and filesystem information
+sudo blkid | sudo tee /backup/system-info/blkid.txt > /dev/null
 ```
 
 ---
@@ -150,16 +154,19 @@ find /backup/packages -maxdepth 2 -type f -print
 ### 5. Back up information about installed browser extensions.
 
 ```bash
-# Place for future command
+#1. Create browser backup directory
+sudo mkdir -p /backup/browser
+
+#2. Find extension directory and copy it's content to the backup (I use firefox)
+jq -r '.addons[] | select(.type == "extension") | "\(.defaultLocale.name) — \(.version) — \(.id)"' \
+~/.mozilla/firefox/*/extensions.json \
+| sudo tee /backup/browser/firefox-extensions.txt > /dev/null
 ```
 
 ---
 
 ### 6. Back up browser bookmarks.
-
-```bash
-# Place for future command
-```
+>**Note**: This step is fairly easy. I'm pretty sure that all of the common browsers have the option to export and save all the bookmarks into one file. Search through the menu and you shall find it. Save the extracted file to the '/backup' directory.
 ---
 
 ### 7. Archive the most important files.
