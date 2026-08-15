@@ -9,7 +9,7 @@
 
 ## Tasks
 
-### 1. Create a local backup of the most important directories, such as `/home` and `/etc`.
+### 1. Create a stable place to store backups
 ---
 #### 1a. Create a new partition on a different drive for storing backups.
 
@@ -90,21 +90,13 @@ sudo mount -a
 findmnt /backup
 ```
 
+---
+### 2. Backup the most important directories (like 'etc' and 'home') to the backup place. 
 ```bash
 # Place for future command
 ```
-
 ---
-
-### 2. Back up information about downloaded packages and package repositories.
-
-```bash
-# Place for future command
-```
-
----
-
-### 3. Back up information about installed disks and storage devices.
+### 3. Back up information about downloaded packages and package repositories.
 
 ```bash
 # Place for future command
@@ -112,7 +104,7 @@ findmnt /backup
 
 ---
 
-### 4. Back up information about installed browser extensions.
+### 4. Back up information about installed disks and storage devices.
 
 ```bash
 # Place for future command
@@ -120,7 +112,7 @@ findmnt /backup
 
 ---
 
-### 5. Back up browser bookmarks.
+### 5. Back up information about installed browser extensions.
 
 ```bash
 # Place for future command
@@ -128,23 +120,28 @@ findmnt /backup
 
 ---
 
-### 6. Archive the most important files.
+### 6. Back up browser bookmarks.
+
+```bash
+# Place for future command
+```
+---
+
+### 7. Archive the most important files.
+
+```bash
+# Place for future command
+```
+---
+
+### 8. Create a complete disk image backup on an external device using Clonezilla.
 
 ```bash
 # Place for future command
 ```
 
 ---
-
-### 7. Create a complete disk image backup on an external device using Clonezilla.
-
-```bash
-# Place for future command
-```
-
----
-
-### 8. Verify that your Bitwarden master password is strong and that you can remember it.
+### 9. Verify that your Bitwarden master password is strong and that you can remember it.
 
 ```bash
 # Place for future command
