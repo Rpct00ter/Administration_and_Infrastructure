@@ -183,5 +183,5 @@ jq -r '.addons[] | select(.type == "extension") | "\(.defaultLocale.name) — \(
 ```
 
 ---
-### 9. Verify that your Bitwarden master password is strong and that you can remember it.
+### 9. Use verified password manager (like f.ex. Bitwarden)
 >**Note**: In order to be fully secured, don't keep your passwords in built in browser password manager. Use for example Bitwarden. Remember to keep your Bitwarden master password unique and strong. Make sure to not forget it. In case of hardware failure your passwords will be safe.
