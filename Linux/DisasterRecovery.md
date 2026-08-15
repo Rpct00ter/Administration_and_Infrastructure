@@ -179,7 +179,33 @@ sudo tar -cJpf /backup/archives/ImportantProject.tar.xz ~/Documents/ImportantPro
 ### 8. Create a complete disk image backup on an external device using Clonezilla.
 
 ```bash
-#Place for future command
+#1. Connect an external storage device
+
+#2. Check the disks from Linux
+lsblk -f
+
+#3. Download Clonezilla Live from https://clonezilla.org/
+
+#4. Create a bootable Clonezilla USB
+
+#5. Boot the computer from the Clonezilla USB
+
+#6. Select: device-image
+
+#7. Select: local_dev
+
+#8. Select the external backup device
+# IMPORTANT:
+# Source      = /dev/nvme0n1 (system disk)
+# Destination = external disk
+
+#9. Select: savedisk
+
+#10. Select the entire system disk:
+
+#11. Give the backup a descriptive name and start imaging process
+
+#12. Reboot after Clonezilla finishes
 ```
 
 ---
