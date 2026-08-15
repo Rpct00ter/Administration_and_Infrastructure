@@ -93,7 +93,22 @@ findmnt /backup
 ---
 ### 2. Backup the most important directories (like 'etc' and 'home') to the backup place. 
 ```bash
-# Place for future command
+#1. Create backup directories
+sudo mkdir -p /backup/home /backup/etc
+
+#2. Backup /home
+sudo rsync -aAXHv /home/ /backup/home/
+
+#3. Backup /etc
+sudo rsync -aAXHv /etc/ /backup/etc/
+
+#4. Check backup sizes
+sudo du -sh /home /backup/home
+sudo du -sh /etc /backup/etc
+
+#5. Test what would be copied without actually copying anything
+sudo rsync -aAXHv --dry-run /home/ /backup/home/
+sudo rsync -aAXHv --dry-run /etc/ /backup/etc/
 ```
 ---
 ### 3. Back up information about downloaded packages and package repositories.
