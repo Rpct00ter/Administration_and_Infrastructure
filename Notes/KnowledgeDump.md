@@ -1287,3 +1287,509 @@ Get-NetFirewallRule -Enabled True |
 5. **Change:** make one controlled change at a time.
 6. **Verify:** test the service or function and inspect relevant logs.
 7. **Document:** record the action, result and rollback procedure.
+
+# 3. Windows Server and Active Directory
+
+> **Scope:** Windows Server administration with a focus on Active Directory Domain Services (AD DS), domain accounts, Group Policy, DNS and DHCP.
+>
+> **Important:** Active Directory changes can affect authentication and access across an entire organization. Perform administrative changes with appropriate permissions, backups and a rollback plan.
+
+## 3.1 Windows Server Roles and Features
+
+Windows Server provides roles and features that deliver network services.
+
+A **role** provides a major server function. A **feature** adds supporting functionality.
+
+Common roles:
+
+| Role | Purpose |
+|---|---|
+| AD DS | Centralized identity and directory management |
+| DNS Server | Name resolution for hosts and services |
+| DHCP Server | Automatic IP address configuration |
+| File and Storage Services | File shares and storage management |
+| Hyper-V | Virtual machine hosting |
+| Web Server (IIS) | Hosting websites and web applications |
+| Remote Desktop Services | Remote desktop and application delivery |
+
+Inspect installed roles and features (PowerShell, elevated):
+
+```powershell
+Get-WindowsFeature
+```
+
+Install a role:
+
+```powershell
+Install-WindowsFeature -Name DNS -IncludeManagementTools
+```
+
+For AD DS, installing the role is only the first step. The server must also be configured as a domain controller or added to an existing domain.
+
+## 3.2 Active Directory — Core Concepts
+
+**Active Directory Domain Services (AD DS)** is Microsoft's directory service for centrally managing identities, computers and resources in a Windows domain.
+
+It stores objects such as users, groups, computers and shared resources. It supports authentication, access control and policy-based administration. [Microsoft Learn — AD DS overview](https://learn.microsoft.com/en-us/windows-server/identity/ad-ds/active-directory-domain-services)
+
+### Main components
+
+| Component | Meaning |
+|---|---|
+| Forest | Top-level AD structure; contains one or more domains |
+| Domain | Administrative and replication unit containing directory objects |
+| Organizational Unit (OU) | Container used to organize objects and apply/delegate administration |
+| Domain Controller (DC) | Server running AD DS that authenticates users and stores directory data |
+| Global Catalog (GC) | Helps locate objects across the forest |
+| Site | Represents network topology and helps manage replication between locations |
+| Trust | Relationship that allows authentication across domains or forests |
+
+Typical hierarchy:
+
+```text
+Forest: company.local
+│
+├── Domain: company.local
+│   ├── OU: Users
+│   │   ├── User: john
+│   │   └── User: anna
+│   │
+│   ├── OU: Computers
+│   │   ├── PC-001
+│   │   └── PC-002
+│   │
+│   ├── OU: Servers
+│   │   └── SRV-01
+│   │
+│   └── OU: Groups
+│       ├── IT-Admins
+│       └── Finance
+```
+
+**Remember:**
+- A forest can contain multiple domains.
+- A domain contains users, computers, groups and other objects.
+- OUs organize objects and provide a scope for Group Policy and delegated administration.
+- A domain controller provides directory and authentication services.
+- Most organizations can operate with a single forest and domain; multiple domains should have a clear administrative or technical reason.
+
+[Microsoft Learn — AD DS logical structure](https://learn.microsoft.com/en-us/windows-server/identity/ad-ds/plan/designing-the-logical-structure)
+
+## 3.3 Domain Controllers and Domain Setup
+
+A **Domain Controller (DC)** hosts AD DS and provides services such as:
+- User and computer authentication.
+- Directory lookups.
+- Group Policy processing support.
+- Replication with other domain controllers.
+
+A production domain should normally have more than one DC to improve availability.
+
+### Basic deployment sequence
+
+1. Install Windows Server.
+2. Configure a static IP address.
+3. Configure the correct DNS settings.
+4. Set a suitable computer name.
+5. Install the AD DS server role.
+6. Promote the server to a domain controller.
+7. Create a new forest/domain or add the server to an existing domain.
+8. Verify DNS, authentication and replication.
+
+Install AD DS role:
+
+```powershell
+Install-WindowsFeature AD-Domain-Services -IncludeManagementTools
+```
+
+The server can then be promoted using Server Manager or the AD DS PowerShell deployment cmdlets.
+
+Example: create a new forest (lab/example environment):
+
+```powershell
+Install-ADDSForest -DomainName "company.local"
+```
+
+This operation requires planning, appropriate credentials and a restart. Do not run it on an existing production server without confirming the intended domain design.
+
+### Check domain controller health
+
+```cmd
+dcdiag
+dcdiag /v
+```
+
+`dcdiag` checks important domain controller functions and reports potential problems.
+
+Check which DC authenticated the current session:
+
+```cmd
+echo %LOGONSERVER%
+```
+
+## 3.4 Users, Groups and Computers
+
+Active Directory objects are commonly managed through:
+
+- **Active Directory Users and Computers:** `dsa.msc`
+- **Active Directory Administrative Center:** `dsac.exe`
+- **PowerShell ActiveDirectory module**
+
+### Common user administration tasks
+
+PowerShell examples (requires the ActiveDirectory module and suitable permissions):
+
+```powershell
+Import-Module ActiveDirectory
+
+Get-ADUser -Filter *
+Get-ADUser john -Properties *
+```
+
+Create a user:
+
+```powershell
+New-ADUser `
+    -Name "John Smith" `
+    -SamAccountName "jsmith" `
+    -UserPrincipalName "jsmith@company.local" `
+    -Path "OU=Users,DC=company,DC=local" `
+    -Enabled $true
+```
+
+Set a password:
+
+```powershell
+Set-ADAccountPassword jsmith -Reset
+```
+
+Enable or disable an account:
+
+```powershell
+Enable-ADAccount jsmith
+Disable-ADAccount jsmith
+```
+
+Unlock an account:
+
+```powershell
+Unlock-ADAccount jsmith
+```
+
+Inspect account properties:
+
+```powershell
+Get-ADUser jsmith -Properties Enabled,LockedOut,LastLogonDate
+```
+
+### Group management
+
+Groups simplify permission management. Assign permissions to groups rather than individually to many users.
+
+Common group scopes:
+
+| Scope | Main use |
+|---|---|
+| Global | Organize users from the same domain |
+| Domain Local | Assign permissions to resources in a domain |
+| Universal | Group members from multiple domains in a forest |
+
+Create a security group:
+
+```powershell
+New-ADGroup `
+    -Name "IT-Support" `
+    -GroupScope Global `
+    -GroupCategory Security `
+    -Path "OU=Groups,DC=company,DC=local"
+```
+
+Add a user:
+
+```powershell
+Add-ADGroupMember -Identity "IT-Support" -Members "jsmith"
+```
+
+Check group membership:
+
+```powershell
+Get-ADGroupMember "IT-Support"
+```
+
+**Practical rule:** Use groups to assign access to file shares, applications and other resources. Avoid assigning permissions individually to each user.
+
+## 3.5 Group Policy (GPO)
+
+**Group Policy** centrally manages Windows configuration for users and computers in an Active Directory environment.
+
+Examples of settings controlled by GPO:
+
+- Password and account policies.
+- Windows Defender Firewall.
+- Windows Update configuration.
+- Desktop and control panel restrictions.
+- Security settings.
+- Scripts and mapped drives.
+- Software deployment and configuration.
+
+### Group Policy basics
+
+Open Group Policy Management:
+
+```text
+gpmc.msc
+```
+
+A GPO can be linked to:
+- A site.
+- A domain.
+- An OU.
+
+Typical processing order:
+
+1. Local policy.
+2. Site policy.
+3. Domain policy.
+4. Parent OU policy.
+5. Child OU policy.
+
+This is commonly called **LSDOU**. Inheritance, link order, enforcement and security filtering can affect the final result.
+
+### Update and inspect policy
+
+Force a policy refresh:
+
+```cmd
+gpupdate /force
+```
+
+Display applied policies:
+
+```cmd
+gpresult /r
+```
+
+Generate a detailed HTML report:
+
+```cmd
+gpresult /h C:\Temp\gpo-report.html
+```
+
+**Troubleshooting tip:** If a GPO does not apply, check the computer/user's OU, security filtering, inheritance, replication and whether the setting is configured under Computer Configuration or User Configuration.
+
+## 3.6 DNS and DHCP in a Domain
+
+DNS and DHCP are essential network services in many Active Directory environments.
+
+### DNS — Domain Name System
+
+DNS resolves names to IP addresses. Active Directory also relies on DNS records to locate domain controllers and services.
+
+Important records:
+
+| Record | Purpose |
+|---|---|
+| A | Hostname to IPv4 address |
+| AAAA | Hostname to IPv6 address |
+| CNAME | Alias for another hostname |
+| MX | Mail server |
+| PTR | Reverse lookup: IP to hostname |
+| SRV | Locates services such as domain controllers |
+
+AD domain clients use DNS SRV records to locate domain services. Incorrect DNS configuration is a common cause of domain join and authentication problems.
+
+Useful commands:
+
+```powershell
+Resolve-DnsName company.local
+Resolve-DnsName -Type SRV _ldap._tcp.dc._msdcs.company.local
+```
+
+```cmd
+nslookup company.local
+ipconfig /all
+ipconfig /flushdns
+```
+
+### DHCP — Dynamic Host Configuration Protocol
+
+DHCP automatically provides network configuration to clients:
+
+- IP address.
+- Subnet mask.
+- Default gateway.
+- DNS server addresses.
+- Lease duration and other options.
+
+The DHCPv4 process is known as **DORA**:
+
+1. Discover — client searches for a DHCP server.
+2. Offer — server offers an IP address.
+3. Request — client requests the offered address.
+4. Acknowledge — server confirms the lease.
+
+Useful DHCP checks:
+
+- Is the DHCP server running and authorized where required?
+- Is the scope active?
+- Are addresses available?
+- Are gateway and DNS options correct?
+- Is DHCP relay/IP helper configured between VLANs?
+- Is the client connected to the correct network?
+
+DHCP does not have to run on a domain controller; it can be hosted on a separate server or network device.
+
+## 3.7 Kerberos, LDAP and Authentication
+
+### Kerberos
+
+Kerberos is a major authentication protocol used in Active Directory domains.
+
+Key points:
+- Uses tickets rather than repeatedly sending passwords to services.
+- Relies on the Key Distribution Center (KDC), normally hosted by domain controllers.
+- Uses time-sensitive authentication.
+- DNS and accurate time synchronization are important for reliable operation.
+
+A significant time difference between a client and domain controller can cause Kerberos authentication failures.
+
+### LDAP
+
+LDAP (Lightweight Directory Access Protocol) is used to query and manage directory information.
+
+| Port | Service |
+|---:|---|
+| TCP/UDP 389 | LDAP |
+| TCP 636 | LDAPS (LDAP over TLS) |
+| TCP/UDP 88 | Kerberos |
+| TCP/UDP 53 | DNS |
+| UDP 123 | NTP/time synchronization |
+| TCP 445 | SMB |
+
+Use secure LDAP transport where supported and required by organizational policy. Do not expose directory services unnecessarily to untrusted networks.
+
+## 3.8 Domain Join and Replication
+
+### Join a Windows computer to a domain
+
+Before joining:
+- Ensure the computer can reach a domain controller.
+- Configure DNS to use the organization's AD DNS servers.
+- Verify network connectivity and time synchronization.
+- Have authorized domain credentials.
+
+PowerShell (run with appropriate privileges):
+
+```powershell
+Add-Computer -DomainName "company.local" -Credential "COMPANY\Administrator" -Restart
+```
+
+The computer restarts after joining.
+
+Check domain membership:
+
+```powershell
+Get-CimInstance Win32_ComputerSystem |
+    Select-Object Name, Domain, PartOfDomain
+```
+
+### Active Directory replication
+
+When changes are made on one domain controller, AD replication distributes directory changes to other domain controllers.
+
+Check replication summary:
+
+```cmd
+repadmin /replsummary
+```
+
+Show replication partners and status:
+
+```cmd
+repadmin /showrepl
+```
+
+Trigger replication (use only when appropriate):
+
+```cmd
+repadmin /syncall /AdeP
+```
+
+Replication problems can cause:
+- Users or groups appearing differently on different DCs.
+- Delayed account or password changes.
+- Authentication problems.
+- Inconsistent Group Policy or directory information.
+
+Do not treat forced replication as a fix for an underlying DNS, connectivity, time or DC health problem.
+
+## 3.9 Essential Active Directory Troubleshooting
+
+| Symptom | First checks |
+|---|---|
+| Cannot join domain | DNS settings, DC reachability, time, credentials |
+| User cannot log in | Account enabled/locked, password, DC connectivity, time |
+| Account repeatedly locks | Security logs, scheduled tasks, saved credentials, services |
+| GPO not applying | `gpresult`, OU location, filtering, replication |
+| Cannot find domain controller | DNS SRV records, DNS server, network connectivity |
+| Changes missing on another DC | `repadmin /replsummary`, `repadmin /showrepl` |
+| Kerberos authentication fails | Time synchronization, DNS, account/SPN configuration |
+| Slow domain logon | DNS, DC availability, GPO processing, network path |
+
+### Essential diagnostic commands
+
+```cmd
+ipconfig /all
+nslookup company.local
+gpupdate /force
+gpresult /r
+dcdiag
+repadmin /replsummary
+repadmin /showrepl
+```
+
+PowerShell:
+
+```powershell
+Get-ADDomain
+Get-ADForest
+Get-ADDomainController -Filter *
+Get-ADUser -Filter * -SearchBase "OU=Users,DC=company,DC=local"
+Get-ADGroupMember "Domain Admins"
+```
+
+## 3.10 Active Directory Security Checklist
+
+- [ ] Use separate privileged accounts for administration.
+- [ ] Minimize membership of Domain Admins and other privileged groups.
+- [ ] Use MFA for administrative access where supported.
+- [ ] Keep domain controllers patched and securely configured.
+- [ ] Restrict network access to domain controllers.
+- [ ] Use secure LDAP configurations where required.
+- [ ] Monitor successful and failed logons.
+- [ ] Review inactive accounts and stale computer objects.
+- [ ] Apply security settings through controlled GPOs.
+- [ ] Maintain and test AD-aware backups and recovery procedures.
+- [ ] Monitor DNS, time synchronization and replication health.
+- [ ] Protect domain controller access and administrative credentials.
+
+**Remember:** Domain controllers are critical infrastructure. Compromise of a domain controller can give an attacker control over domain authentication and authorization.
+
+---
+
+## Quick Reference
+
+| Task | Tool / Command |
+|---|---|
+| AD Users and Computers | `dsa.msc` |
+| Group Policy Management | `gpmc.msc` |
+| DNS Manager | `dnsmgmt.msc` |
+| DHCP Manager | `dhcpmgmt.msc` |
+| Check domain controller health | `dcdiag` |
+| Check replication | `repadmin /replsummary` |
+| Force policy update | `gpupdate /force` |
+| Show applied policies | `gpresult /r` |
+| List domain controllers | `Get-ADDomainController -Filter *` |
+| List domain users | `Get-ADUser -Filter *` |
+| Check current logon server | `echo %LOGONSERVER%` |
+
