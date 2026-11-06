@@ -602,3 +602,688 @@ sudo nft list ruleset
 5. **Change:** make one controlled change at a time.
 6. **Verify:** test the service and check logs for new errors.
 7. **Document:** record the cause, action, result and rollback procedure.
+
+# 2. Windows Administration
+
+> **Scope:** Windows 10/11 and Windows Server. Commands are marked as **CMD** or **PowerShell** where relevant.
+>
+> **Important:** Run administrative commands in an elevated terminal only when required. In domain-managed environments, Group Policy (GPO) or Intune may override local settings.
+
+## 2.1 Essential Windows Administration Tools
+
+Many administrative tools can be opened using `Win + R`.
+
+| Command | Tool | Purpose |
+|---|---|---|
+| `taskmgr` | Task Manager | Processes, performance, startup applications |
+| `services.msc` | Services | Manage Windows services |
+| `eventvwr.msc` | Event Viewer | Inspect system and application logs |
+| `devmgmt.msc` | Device Manager | Hardware and driver management |
+| `diskmgmt.msc` | Disk Management | Disks, partitions and volumes |
+| `compmgmt.msc` | Computer Management | Combined administration console |
+| `ncpa.cpl` | Network Connections | Network adapters and connections |
+| `wf.msc` | Windows Defender Firewall | Advanced firewall rules |
+| `firewall.cpl` | Windows Firewall | Basic firewall settings |
+| `appwiz.cpl` | Programs and Features | Installed applications |
+| `sysdm.cpl` | System Properties | Computer name, domain and system settings |
+| `msinfo32` | System Information | Hardware and OS information |
+| `resmon` | Resource Monitor | Detailed CPU, RAM, disk and network usage |
+| `perfmon` | Performance Monitor | Performance counters |
+| `taskschd.msc` | Task Scheduler | Scheduled tasks |
+| `regedit` | Registry Editor | Windows registry |
+| `gpedit.msc` | Local Group Policy Editor | Local policy configuration (edition-dependent) |
+| `secpol.msc` | Local Security Policy | Local security settings (edition-dependent) |
+| `mstsc` | Remote Desktop | Connect to another Windows computer |
+
+Useful Windows Settings shortcut:
+
+```text
+ms-settings:windowsupdate
+```
+
+Opens Windows Update settings.
+
+## 2.2 CMD and PowerShell Essentials
+
+### CMD — basic system administration
+
+| Command | Purpose |
+|---|---|
+| `whoami /all` | Current account, SID, groups and privileges |
+| `hostname` | Computer name |
+| `systeminfo` | OS, hardware and installed hotfix information |
+| `ver` | Windows version |
+| `tasklist` | List running processes |
+| `tasklist /svc` | Processes and associated services |
+| `driverquery /v` | Detailed driver information |
+| `net user` | List local users |
+| `net localgroup` | List local groups |
+| `net localgroup Administrators` | Show local Administrators group members |
+
+Examples:
+
+```cmd
+hostname
+systeminfo
+whoami /all
+tasklist /svc
+net user
+net localgroup Administrators
+```
+
+Terminate a process by PID:
+
+```cmd
+taskkill /PID 1234 /T
+```
+
+- `/PID` — process ID.
+- `/T` — terminate the process and its child processes.
+- Add `/F` to force termination when necessary.
+
+Always verify the PID before terminating a process.
+
+### PowerShell — administration and automation
+
+PowerShell uses objects and pipelines, making it especially useful for filtering and managing system information.
+
+| Command | Purpose |
+|---|---|
+| `Get-Command` | Find available commands |
+| `Get-Help` | Display command help |
+| `Get-ComputerInfo` | System information |
+| `Get-HotFix` | Installed Windows updates/hotfixes |
+| `Get-Service` | List services |
+| `Get-Process` | List processes |
+| `Get-LocalUser` | List local accounts |
+| `Get-LocalGroup` | List local groups |
+| `Get-Volume` | List volumes |
+| `Get-Disk` | List disks |
+| `Get-Partition` | List partitions |
+
+Examples:
+
+```powershell
+Get-Command *net*
+Get-Help Get-Service -Examples
+
+Get-ComputerInfo
+Get-HotFix
+
+Get-Process | Sort-Object CPU -Descending |
+    Select-Object -First 10
+
+Get-Service | Where-Object Status -ne 'Running'
+```
+
+PowerShell pipeline operators:
+
+| Operator | Purpose |
+|---|---|
+| `\|` | Pass objects to another command |
+| `Where-Object` | Filter objects |
+| `Select-Object` | Select properties or limit results |
+| `Sort-Object` | Sort results |
+| `Format-Table` | Display results as a table |
+
+Example:
+
+```powershell
+Get-Service |
+    Where-Object Status -eq 'Running' |
+    Sort-Object Name |
+    Format-Table Name, Status
+```
+
+## 2.3 Users, Groups and Permissions
+
+### Local account management
+
+```powershell
+Get-LocalUser
+Get-LocalGroup
+Get-LocalGroupMember -Group 'Administrators'
+```
+
+Create a local user:
+
+```powershell
+$password = Read-Host "Enter password" -AsSecureString
+
+New-LocalUser -Name "anna" `
+    -Password $password `
+    -FullName "Anna User"
+```
+
+Add the user to the local Administrators group:
+
+```powershell
+Add-LocalGroupMember -Group 'Administrators' -Member 'anna'
+```
+
+Remove a user from a group:
+
+```powershell
+Remove-LocalGroupMember -Group 'Administrators' -Member 'anna'
+```
+
+Disable an account:
+
+```powershell
+Disable-LocalUser -Name 'anna'
+```
+
+Enable it again:
+
+```powershell
+Enable-LocalUser -Name 'anna'
+```
+
+**Security principles:**
+
+- Use individual accounts rather than shared administrator accounts.
+- Give users only the permissions they need (least privilege).
+- Limit membership of the local Administrators group.
+- Disable accounts that are no longer required.
+- Use MFA where available.
+- Review privileged group membership regularly.
+
+### NTFS permissions
+
+Windows uses NTFS Access Control Lists (ACLs) to control access to files and directories.
+
+Common permissions:
+
+| Permission | Meaning |
+|---|---|
+| Full Control | Read, write, modify permissions and take ownership |
+| Modify | Read, write, execute and delete |
+| Read & Execute | Read files and execute programs |
+| Read | View file contents |
+| Write | Create or modify files |
+
+Inspect permissions:
+
+```cmd
+icacls C:\Data
+```
+
+Grant read access:
+
+```cmd
+icacls C:\Data /grant anna:(R)
+```
+
+Grant modify access:
+
+```cmd
+icacls C:\Data /grant anna:(M)
+```
+
+Apply permissions recursively:
+
+```cmd
+icacls C:\Data /grant anna:(OI)(CI)M /T
+```
+
+- `(OI)` — permission inheritance by files.
+- `(CI)` — permission inheritance by directories.
+- `/T` — process files and subdirectories recursively.
+
+Remove an explicit permission entry:
+
+```cmd
+icacls C:\Data /remove anna
+```
+
+**Important:** NTFS permissions can be combined with share permissions when accessing a network share. Effective access is determined by both. Avoid broad permissions such as `Everyone: Full Control`.
+
+## 2.4 Processes, Services and Scheduled Tasks
+
+### Process management
+
+PowerShell:
+
+```powershell
+Get-Process
+
+Get-Process |
+    Sort-Object CPU -Descending |
+    Select-Object -First 10
+
+Get-Process -Name notepad
+Stop-Process -Name notepad
+```
+
+CMD:
+
+```cmd
+tasklist
+tasklist /FI "IMAGENAME eq notepad.exe"
+taskkill /IM notepad.exe
+```
+
+Use `Stop-Process` or `taskkill` carefully. Terminating a process may cause unsaved data loss or interrupt a service.
+
+### Windows services
+
+PowerShell:
+
+```powershell
+Get-Service
+
+Get-Service -Name Spooler
+Start-Service -Name Spooler
+Stop-Service -Name Spooler
+Restart-Service -Name Spooler
+```
+
+Inspect service configuration:
+
+```powershell
+Get-CimInstance Win32_Service |
+    Select-Object Name, State, StartMode, StartName, PathName
+```
+
+CMD:
+
+```cmd
+sc query
+sc query Spooler
+sc qc Spooler
+```
+
+Services console:
+
+```text
+services.msc
+```
+
+Common service properties:
+
+- **Name:** internal service identifier.
+- **Display name:** human-readable service name.
+- **Status:** running, stopped or another state.
+- **Startup type:** automatic, manual or disabled.
+- **Log On As:** account under which the service runs.
+
+Do not disable services simply because their purpose is unclear. First identify dependencies and business impact.
+
+### Scheduled tasks
+
+Open Task Scheduler:
+
+```text
+taskschd.msc
+```
+
+PowerShell:
+
+```powershell
+Get-ScheduledTask
+Get-ScheduledTask -TaskPath '\Microsoft\Windows\'
+```
+
+CMD:
+
+```cmd
+schtasks /query /fo LIST /v
+```
+
+Scheduled tasks are commonly used for maintenance, backups, scripts and application jobs. When troubleshooting, inspect the task's trigger, action, execution account and last result.
+
+## 2.5 Event Viewer and System Logs
+
+Event Viewer is one of the most important Windows troubleshooting tools.
+
+Open it:
+
+```text
+eventvwr.msc
+```
+
+Main log categories:
+
+| Log | What to investigate |
+|---|---|
+| System | Drivers, services, boot and hardware errors |
+| Application | Application crashes and errors |
+| Security | Logons, account activity and security auditing |
+| Setup | Installation and update events |
+
+### PowerShell event inspection
+
+Read recent System events:
+
+```powershell
+Get-WinEvent -LogName System -MaxEvents 50
+```
+
+Read recent Application events:
+
+```powershell
+Get-WinEvent -LogName Application -MaxEvents 50
+```
+
+Filter Security events:
+
+```powershell
+Get-WinEvent -FilterHashtable @{
+    LogName = 'Security'
+    Id = 4624,4625
+} -MaxEvents 30
+```
+
+Important Security Event IDs:
+
+| Event ID | Meaning |
+|---:|---|
+| 4624 | Successful logon |
+| 4625 | Failed logon |
+| 4648 | Logon using explicitly supplied credentials |
+| 4672 | Special privileges assigned to a new logon |
+| 4688 | New process created (if auditing is configured) |
+| 4697 | Service installed |
+| 4698 | Scheduled task created |
+| 4720 | User account created |
+| 4728 | Member added to a global security group |
+| 4732 | Member added to a local security group |
+
+**Note:** Events appear only when the relevant auditing is enabled and the log has retained the data. An absent event does not prove that an action did not happen.
+
+### Additional diagnostic tools
+
+| Tool | Command | Purpose |
+|---|---|---|
+| Reliability Monitor | `perfmon /rel` | History of crashes and system stability |
+| Resource Monitor | `resmon` | Detailed resource usage |
+| Performance Monitor | `perfmon` | Performance counters and monitoring |
+| Device Manager | `devmgmt.msc` | Driver and hardware problems |
+
+## 2.6 Disk and Storage Management
+
+### Graphical tools
+
+```text
+diskmgmt.msc
+```
+
+Disk Management allows administrators to:
+
+- Inspect physical disks and partitions.
+- Create and format volumes.
+- Assign drive letters.
+- Extend or shrink supported volumes.
+- Inspect disk status.
+
+### PowerShell storage commands
+
+```powershell
+Get-Disk
+Get-Partition
+Get-Volume
+```
+
+Inspect a particular disk:
+
+```powershell
+Get-Disk -Number 0 | Format-List *
+```
+
+Inspect free space:
+
+```powershell
+Get-Volume |
+    Select-Object DriveLetter, FileSystem,
+        Size, SizeRemaining
+```
+
+### Disk-related troubleshooting
+
+Check:
+
+1. Whether the disk is detected.
+2. Whether it is online.
+3. Whether the partition exists.
+4. Whether the filesystem is healthy.
+5. Whether a drive letter or mount point is assigned.
+6. Whether the volume has free space.
+
+**Warning:** Initializing, formatting, repartitioning or changing disk layouts can destroy data. Verify the selected disk and ensure a backup exists before making changes.
+
+## 2.7 Windows Networking
+
+### CMD — network configuration and diagnostics
+
+```cmd
+ipconfig
+ipconfig /all
+ipconfig /flushdns
+ipconfig /release
+ipconfig /renew
+
+ping -n 4 1.1.1.1
+tracert 1.1.1.1
+pathping 1.1.1.1
+nslookup example.com
+
+netstat -ano
+arp -a
+```
+
+| Command | Purpose |
+|---|---|
+| `ipconfig /all` | Full IP configuration |
+| `ipconfig /flushdns` | Clear local DNS resolver cache |
+| `ipconfig /release` | Release DHCP-assigned IPv4 address |
+| `ipconfig /renew` | Request a new DHCP IPv4 address |
+| `ping` | Test IP reachability using ICMP |
+| `tracert` | Show the route toward a destination |
+| `pathping` | Route and packet-loss diagnostics |
+| `nslookup` | Query DNS |
+| `netstat -ano` | Connections/listening ports and associated PIDs |
+| `arp -a` | Display IPv4 ARP cache |
+
+**Caution:** `ipconfig /release` temporarily removes the DHCP-assigned IPv4 configuration. Do not use it over a remote connection unless you have an alternative way to access the machine.
+
+### PowerShell — network diagnostics
+
+```powershell
+Get-NetIPConfiguration
+Get-NetAdapter
+Get-NetRoute
+Get-NetNeighbor
+```
+
+Test DNS resolution:
+
+```powershell
+Resolve-DnsName example.com
+```
+
+Test whether a TCP port is reachable:
+
+```powershell
+Test-NetConnection server.example.com -Port 443
+```
+
+Inspect listening TCP ports:
+
+```powershell
+Get-NetTCPConnection -State Listen
+```
+
+Display process IDs owning TCP connections:
+
+```powershell
+Get-NetTCPConnection |
+    Select-Object State, LocalAddress, LocalPort,
+        RemoteAddress, RemotePort, OwningProcess
+```
+
+### Basic network troubleshooting sequence
+
+1. Check the network adapter:
+
+   ```powershell
+   Get-NetAdapter
+   ```
+
+2. Check IP address, gateway and DNS:
+
+   ```powershell
+   Get-NetIPConfiguration
+   ```
+
+3. Test the local TCP/IP stack and network reachability:
+
+   ```cmd
+   ping 127.0.0.1
+   ping <DEFAULT_GATEWAY>
+   ```
+
+4. Test external IP connectivity:
+
+   ```cmd
+   ping 1.1.1.1
+   ```
+
+5. Test DNS resolution:
+
+   ```powershell
+   Resolve-DnsName example.com
+   ```
+
+6. Test the required service port:
+
+   ```powershell
+   Test-NetConnection <HOST> -Port <PORT>
+   ```
+
+A failed ping alone does not prove a host is offline: ICMP may be blocked by a firewall.
+
+## 2.8 Windows System Repair and Maintenance
+
+### System File Checker (SFC)
+
+Checks protected Windows system files and attempts to repair corrupted files.
+
+Run in an elevated CMD or PowerShell:
+
+```cmd
+sfc /scannow
+```
+
+### DISM
+
+Repairs the Windows component store, which can be used as a source for system file repairs.
+
+```cmd
+DISM /Online /Cleanup-Image /CheckHealth
+DISM /Online /Cleanup-Image /ScanHealth
+DISM /Online /Cleanup-Image /RestoreHealth
+```
+
+Typical repair sequence:
+
+```cmd
+DISM /Online /Cleanup-Image /RestoreHealth
+sfc /scannow
+```
+
+Restart if required and verify whether the original problem is resolved.
+
+### Updates and installed patches
+
+PowerShell:
+
+```powershell
+Get-HotFix
+```
+
+Open Windows Update:
+
+```text
+ms-settings:windowsupdate
+```
+
+Good patch-management practice:
+
+- Install security updates regularly.
+- Follow organizational maintenance windows.
+- Check compatibility and known issues for critical systems.
+- Plan required restarts.
+- Verify services and applications after updates.
+- Keep a rollback or recovery plan for important systems.
+
+## 2.9 Windows Firewall and Basic Hardening
+
+Open advanced firewall management:
+
+```text
+wf.msc
+```
+
+Inspect firewall profiles:
+
+```powershell
+Get-NetFirewallProfile |
+    Format-Table Name, Enabled, DefaultInboundAction
+```
+
+List enabled rules:
+
+```powershell
+Get-NetFirewallRule -Enabled True |
+    Select-Object DisplayName, Direction, Action
+```
+
+### Basic firewall principles
+
+- Keep the firewall enabled on all applicable profiles.
+- Block unsolicited inbound traffic by default where appropriate.
+- Allow only required services and ports.
+- Restrict administrative access to trusted networks.
+- Avoid broad rules that expose services unnecessarily.
+- Review and document firewall exceptions.
+
+### Essential Windows security checklist
+
+- [ ] Keep Windows and applications patched.
+- [ ] Use standard accounts for everyday work.
+- [ ] Restrict local Administrators membership.
+- [ ] Enable MFA where available.
+- [ ] Keep Microsoft Defender or the approved endpoint protection active.
+- [ ] Enable Windows Firewall.
+- [ ] Disable unnecessary services and remote access.
+- [ ] Secure RDP and restrict access to trusted networks.
+- [ ] Review local users and privileged groups.
+- [ ] Monitor Security and System event logs.
+- [ ] Maintain tested backups.
+- [ ] Follow organizational GPO/Intune policies.
+
+## 2.10 Quick Troubleshooting Reference
+
+| Symptom | First checks |
+|---|---|
+| Computer is slow | Task Manager, `resmon`, `Get-Process` |
+| High CPU usage | Sort processes by CPU usage |
+| Service unavailable | `Get-Service`, `services.msc`, Event Viewer |
+| Application crashes | Application log, Reliability Monitor |
+| No network connection | `ipconfig /all`, `Get-NetAdapter`, gateway test |
+| IP works but hostname fails | `Resolve-DnsName`, `ipconfig /flushdns` |
+| Remote port unavailable | `Test-NetConnection <HOST> -Port <PORT>` |
+| Disk is full | `Get-Volume`, Disk Management |
+| Windows system files corrupted | DISM, then `sfc /scannow` |
+| Suspicious login activity | Security log, Event IDs 4624 and 4625 |
+| Unexpected process | Task Manager, `Get-Process`, process path and signature |
+
+### Safe administration workflow
+
+1. **Identify:** record the symptom, affected user/system and time.
+2. **Inspect:** check processes, services, logs, storage and network state.
+3. **Check permissions:** determine whether the task requires elevation.
+4. **Back up:** preserve relevant configuration before making changes.
+5. **Change:** make one controlled change at a time.
+6. **Verify:** test the service or function and inspect relevant logs.
+7. **Document:** record the action, result and rollback procedure.
