@@ -1,1833 +1,935 @@
+# IT compressed notes
+> **Purpose:** A compact, practical reference for common administration, troubleshooting and security tasks.
+
 # 1. Linux Administration
 
-**Scope:** Debian-based Linux. Commands may differ on other distributions.
+**Scope:** Debian-based systems. Package names, service names and paths may differ on other distributions.
 
-## 1.1 Essential Files and Directories
+## 1.1 Filesystem essentials
 
-| Path | Purpose |
-|---|---|
-| `/` | Filesystem root |
-| `/etc` | System configuration |
-| `/home` | User home directories |
-| `/root` | Root user's home |
-| `/var/log` | System and application logs |
-| `/var` | Variable data, logs and caches |
-| `/tmp` | Temporary files |
-| `/usr` | Programs and libraries |
-| `/opt` | Optional/third-party software |
-| `/boot` | Kernel and boot files |
-| `/dev` | Device files |
-| `/proc`, `/sys` | Process, kernel and hardware information |
+| Path | Purpose | Path | Purpose |
+|---|---|---|---|
+| `/etc` | System configuration | `/var/log` | System/application logs |
+| `/home` | User home directories | `/root` | Root user's home |
+| `/var` | Variable data, logs, caches | `/tmp` | Temporary files |
+| `/usr` | Programs and libraries | `/opt` | Optional/third-party software |
+| `/boot` | Kernel and boot files | `/dev` | Device files |
+| `/proc` | Process/kernel information | `/sys` | Kernel/hardware information |
 
-Important files: `/etc/passwd`, `/etc/group`, `/etc/fstab`, `/etc/ssh/sshd_config`.
+Important files: `/etc/passwd` (accounts), `/etc/group` (groups), `/etc/fstab` (automatic mounts), `/etc/ssh/sshd_config` (SSH server configuration).
 
-## 1.2 Essential Terminal Commands
+## 1.2 Files and text
+
+| Command | Explanation | Command | Explanation |
+|---|---|---|---|
+| `pwd` | Show current directory | `ls -lah` | List files, including hidden files and readable sizes |
+| `cd /etc` | Change directory | `cd ..` / `cd ~` | Parent / home directory |
+| `find /var/log -name "*.log"` | Find matching files | `file <FILE>` | Identify file type |
+| `stat <FILE>` | Show file metadata | `command -v <CMD>` | Locate a command |
+| `cp <SRC> <DEST>` | Copy file | `cp -a <DIR> <DEST>` | Copy directory preserving attributes |
+| `mv <OLD> <NEW>` | Move or rename | `mkdir -p <PATH>` | Create directory tree |
+| `rm -i <FILE>` | Delete with confirmation | `tar -czf backup.tgz <DIR>` | Create compressed archive |
+| `tar -xzf backup.tgz` | Extract archive | `less <FILE>` | Read a file interactively |
+| `head -n 20 <FILE>` | First 20 lines | `tail -n 50 <FILE>` | Last 50 lines |
+| `tail -f <LOG>` | Follow a live log | `grep -n "error" <FILE>` | Search text with line numbers |
+| `grep -Rni "failed" /var/log` | Recursive, case-insensitive search | `sort <FILE> \| uniq -c` | Sort and count repeated lines |
+| `cut -d: -f1 /etc/passwd` | Extract usernames | `awk -F: '{print $1}' <FILE>` | Print first colon-separated field |
+
+**Pipes/redirection:** `cmd1 | cmd2` passes output to another command; `>` overwrites a file; `>>` appends; `2>` redirects errors. Check the destination before using `>` because it truncates existing content. `rm -rf` is destructive—verify the path, especially with `sudo`.
+
+## 1.3 Users, groups and permissions
+
+| Command | Explanation | Command | Explanation |
+|---|---|---|---|
+| `whoami` | Current username | `id` | UID, GID and group membership |
+| `groups` | Groups for current user | `sudo -l` | Commands current user may run with sudo |
+| `sudo adduser <USER>` | Create a Debian user | `sudo passwd <USER>` | Set/change password |
+| `sudo usermod -aG sudo <USER>` | Add user to sudo group | `sudo passwd -l <USER>` | Lock password authentication |
+| `getent passwd <USER>` | Look up account | `getent group <GROUP>` | Look up group |
+| `chmod 640 <FILE>` | Set numeric permissions | `chmod u+x <FILE>` | Add execute permission for owner |
+| `chown user:group <FILE>` | Change owner and group | `chgrp <GROUP> <FILE>` | Change group ownership |
+| `getfacl <FILE>` | View ACLs | `setfacl -m u:<USER>:r <FILE>` | Grant user read ACL |
+
+`usermod -aG` must include `-a`; without it, existing supplementary groups can be replaced.
+
+Permission values: `r=4` read, `w=2` write, `x=1` execute.
+
+| Mode | Meaning | Mode | Meaning |
+|---|---|---|---|
+| `755` | Owner full; others read/execute | `750` | Owner full; group read/execute |
+| `700` | Owner only | `644` | Owner read/write; others read |
+| `640` | Owner read/write; group read | `600` | Owner read/write only |
+
+Avoid `chmod 777`. Use the minimum permissions needed. `umask 027` removes group write and all permissions for others from newly created objects, subject to the application's requested mode.
+
+## 1.4 Packages, processes and services
+
+| Command | Explanation | Command | Explanation |
+|---|---|---|---|
+| `sudo apt update` | Refresh repository indexes | `sudo apt upgrade` | Upgrade installed packages |
+| `sudo apt install <PKG>` | Install package | `sudo apt remove <PKG>` | Remove package, usually retaining config |
+| `sudo apt purge <PKG>` | Remove package and system config | `sudo apt autoremove` | Remove unused dependencies |
+| `apt search <NAME>` | Search packages | `apt show <PKG>` | Show package details |
+| `dpkg -l` | List installed packages | `dpkg -S <PATH>` | Find package owning a file |
+| `ps aux` | List processes | `pgrep -af <NAME>` | Find process by name/pattern |
+| `top` | Live process/resource view | `free -h` | RAM and swap usage |
+| `uptime` | Uptime and load average | `kill -TERM <PID>` | Request graceful termination |
+| `kill -KILL <PID>` | Force termination; last resort | `systemctl status <SVC>` | Service state and recent logs |
+| `sudo systemctl start <SVC>` | Start service | `sudo systemctl stop <SVC>` | Stop service |
+| `sudo systemctl restart <SVC>` | Restart service | `sudo systemctl reload <SVC>` | Reload config if supported |
+| `sudo systemctl enable <SVC>` | Start at boot | `sudo systemctl enable --now <SVC>` | Enable and start now |
+| `systemctl --failed` | List failed units | `systemctl list-units` | List loaded units |
+
+`apt update` only refreshes package indexes; it does not install updates. Prefer `TERM` before `KILL`. Confirm a service's purpose and dependencies before stopping or disabling it.
+
+## 1.5 Logs and boot
+
+| Command | Explanation | Command | Explanation |
+|---|---|---|---|
+| `journalctl -b` | Current boot's journal | `journalctl -p err -b` | Errors from current boot |
+| `journalctl -u <SVC>` | Logs for service | `journalctl -u <SVC> -f` | Follow service log live |
+| `journalctl --since today` | Logs since today | `journalctl --since "1 hour ago"` | Recent logs |
+| `dmesg -T` | Kernel messages with timestamps | `systemctl --failed` | Failed services/units |
+| `systemd-analyze blame` | Boot-time contribution by unit | `cat /proc/cmdline` | Kernel boot parameters |
+
+Common files, if configured: `/var/log/syslog` (general), `/var/log/auth.log` (authentication), `/var/log/kern.log` (kernel). Many systems rely mainly on the systemd journal.
+
+## 1.6 Storage and filesystems
+
+| Command | Explanation | Command | Explanation |
+|---|---|---|---|
+| `lsblk -f` | Disks, partitions and filesystems | `blkid` | Filesystem UUIDs and types |
+| `sudo fdisk -l` | List partition tables | `df -h` | Filesystem capacity/free space |
+| `du -sh <PATH>` | Directory size | `findmnt` | Mounted filesystems |
+| `sudo mount <DEV> <DIR>` | Mount filesystem | `sudo umount <DIR>` | Unmount filesystem |
+| `sudo pvs` | Show LVM physical volumes | `sudo vgs` | Show volume groups |
+| `sudo lvs` | Show logical volumes | `sudo lsof +L1` | Find deleted files still held open |
+
+Example safe mount check:
 
 ```bash
-pwd                         # Current directory
-ls -lah                      # Files, including hidden files
-cd /etc; cd ..; cd ~         # Change directory
-find /var/log -name "*.log"  # Find files
-file <FILE>                  # Identify file type
-
-cp source destination        # Copy
-cp -a source_dir backup_dir  # Copy and preserve attributes
-mv old new                   # Move/rename
-mkdir -p /opt/app/logs       # Create directory tree
-rm -i <FILE>                 # Delete with confirmation
-tar -czf backup.tar.gz dir/  # Create archive
-tar -xzf backup.tar.gz       # Extract archive
-````
-
-Caution: `rm -rf` deletes recursively without confirmation. Verify paths carefully, especially when using `sudo`.
-
-### Read, search and process text
-
-```
-less <FILE>                  # Read a file
-head -n 20 <FILE>             # First 20 lines
-tail -n 50 <FILE>             # Last 50 lines
-tail -f /var/log/syslog       # Follow a log
-grep -n "error" <FILE>        # Search text
-grep -Rni "failed" /var/log/  # Recursive case-insensitive search
-sort file.txt | uniq -c       # Count repeated lines
-cut -d: -f1 /etc/passwd       # Extract first field
-```
-
-### Pipes and redirection
-
-| Syntax          | Meaning                        |
-| --------------- | ------------------------------ |
-| `cmd1 \\| cmd2` | Send output to another command |
-| `>`             | Write/overwrite a file         |
-| `>>`            | Append to a file               |
-| `2>`            | Redirect errors                |
-
-```
-ip addr > network.txt
-command >> output.log
-command 2> errors.log
-```
-
-Be careful: `>` overwrites existing file contents.
-
-## 1.3 Users and Permissions
-
-```
-whoami
-id
-groups
-sudo -l
-
-sudo adduser anna
-sudo passwd anna
-sudo usermod -aG sudo anna
-sudo passwd -l anna
-getent passwd anna
-```
-
-Use `usermod -aG` when adding a supplementary group. Omitting `-a` can replace existing supplementary group memberships.
-
-### Permission model
-
-- `u` = owner, `g` = group, `o` = others.
-- `r` = read (4), `w` = write (2), `x` = execute (1).
-
-| Mode  | Meaning                         |
-| ----- | ------------------------------- |
-| `755` | Owner full; others read/execute |
-| `750` | Owner full; group read/execute  |
-| `700` | Owner only                      |
-| `644` | Owner read/write; others read   |
-| `640` | Owner read/write; group read    |
-| `600` | Owner read/write only           |
-
-```
-chmod 640 file.txt
-chmod u+x script.sh
-chown anna:developers file.txt
-chgrp developers file.txt
-getfacl file.txt
-setfacl -m u:anna:r file.txt
-umask
-```
-
-Avoid `chmod 777`; it gives everyone read, write and execute access. Use ACLs when standard owner/group/other permissions are insufficient.
-
-## 1.4 Packages, Processes and Services
-
-### APT package management
-
-```
-sudo apt update                 # Refresh package indexes
-sudo apt upgrade                # Upgrade installed packages
-sudo apt install <PACKAGE>
-sudo apt remove <PACKAGE>
-sudo apt purge <PACKAGE>
-sudo apt autoremove
-apt search <NAME>
-apt show <PACKAGE>
-dpkg -l                         # Installed packages
-dpkg -S /path/to/file            # Find owning package
-```
-
-`apt update` refreshes package indexes; it does not install updates.
-
-### Processes and services
-
-```
-ps aux
-pgrep -af <NAME>
-top
-free -h
-uptime
-kill -TERM <PID>                # Request graceful termination
-kill -KILL <PID>                # Force termination; last resort
-
-systemctl status <SERVICE>
-sudo systemctl start <SERVICE>
-sudo systemctl stop <SERVICE>
-sudo systemctl restart <SERVICE>
-sudo systemctl enable <SERVICE>
-sudo systemctl enable --now <SERVICE>
-systemctl --failed
-```
-
-Use `TERM` before `KILL`. Do not stop or disable an unfamiliar service without checking its purpose and dependencies.
-
-## 1.5 Logs and Storage
-
-### Logs and boot diagnostics
-
-```
-journalctl -b                   # Current boot
-journalctl -p err -b            # Errors from current boot
-journalctl -u <SERVICE>         # Service logs
-journalctl -u <SERVICE> -f      # Follow service logs
-journalctl --since "1 hour ago"
-dmesg -T                        # Kernel messages
-systemctl --failed
-```
-
-Common log locations: `/var/log/syslog`, `/var/log/auth.log`, `/var/log/kern.log` (availability depends on logging configuration).
-
-### Disk and filesystem checks
-
-```
-lsblk -f
-df -h                           # Filesystem free space
-du -sh <PATH>                   # Directory size
-findmnt
-sudo fdisk -l
-sudo blkid
-```
-
-Mount a filesystem:
-
-```
 sudo mkdir -p /mnt/data
 sudo mount /dev/sdb1 /mnt/data
 findmnt /mnt/data
 sudo umount /mnt/data
 ```
 
-For automatic mounting, use a filesystem UUID in `/etc/fstab`. Validate changes before rebooting:
+For `/etc/fstab`, prefer UUIDs over device names. After editing, run `sudo findmnt --verify` and `sudo mount -a` before rebooting. A bad entry can cause boot or mount problems.
 
-```
-sudo findmnt --verify
-sudo mount -a
-```
+LVM structure: **PV** (physical volume) → **VG** (volume group) → **LV** (logical volume). Back up before resizing or removing storage.
 
-An incorrect `/etc/fstab` entry can cause boot or mount problems.
+If disk is full, start with `df -h`, then `du -xhd1 /` to find large directories. Do not delete logs or application data blindly.
 
-LVM: PV (physical volume) → VG (volume group) → LV (logical volume).
+## 1.7 Networking, SSH and firewall
 
-```
-sudo pvs
-sudo vgs
-sudo lvs
-```
+| Command | Explanation | Command | Explanation |
+|---|---|---|---|
+| `ip -br addr` | Brief IP/interface view | `ip link` | Interface state |
+| `ip route` | Routing table | `ip route get <IP>` | Route selected for destination |
+| `ip neigh` | ARP/NDP neighbour cache | `ping -c 4 <IP>` | Test ICMP reachability |
+| `tracepath <HOST>` | Trace network path | `getent hosts <NAME>` | Resolve using system configuration |
+| `resolvectl status` | DNS configuration | `ss -lntup` | Listening TCP/UDP sockets |
+| `ss -s` | Socket statistics | `curl -I <URL>` | HTTP response headers |
+| `ssh user@host` | Remote SSH login | `scp <FILE> user@host:/PATH` | Copy file over SSH |
+| `sudo sshd -t` | Validate SSH config | `sudo systemctl reload ssh` | Reload SSH service |
+| `sudo ufw status verbose` | Show UFW rules | `sudo nft list ruleset` | Show nftables rules |
 
-When a disk is full:
+Example UFW rule: `sudo ufw allow from 10.10.0.0/24 to any port 22 proto tcp`.
 
-```
-df -h
-sudo du -xhd1 /
-sudo lsof +L1
-```
+Before changing SSH/firewall remotely, allow the management path first, validate the config, keep the current session open and test a second session. Packet captures (`tcpdump`) can contain sensitive data; capture only authorised traffic.
 
-Do not delete logs or application data blindly. Identify what is consuming space first.
+**Linux hardening:** patch packages; remove unused accounts/services; restrict sudo; prefer SSH keys; disable direct root SSH login where appropriate; avoid world-writable files; enable firewall; monitor auth logs; maintain and test backups.
 
-## 1.6 Linux Networking
+## 1.8 Linux quick troubleshooting
 
-```
-ip -br addr                    # IP addresses/interfaces
-ip link                        # Interface state
-ip route                       # Routing table
-ip route get 1.1.1.1            # Selected route
-ip neigh                       # ARP/NDP neighbours
+| Symptom | First checks | Symptom | First checks |
+|---|---|---|---|
+| Slow server | `uptime`, `top`, `free -h` | Disk full | `df -h`, `du -xhd1 /`, `lsof +L1` |
+| Service unavailable | `systemctl status`, `journalctl -u` | Interface down | `ip -br addr`, `ip link` |
+| No connectivity | `ip route`, ping gateway | IP works, name fails | `resolvectl`, `getent hosts` |
+| Port unavailable | `ss -lntup`, firewall, remote test | Boot problem | `journalctl -b`, `dmesg -T` |
+| SSH fails | Service status, auth log, config, firewall |  |  |
 
-ping -c 4 1.1.1.1
-tracepath example.com
-getent hosts example.com       # Name resolution
-resolvectl status              # DNS configuration
-ss -lntup                       # Listening TCP/UDP sockets
-ss -s                           # Socket statistics
-curl -I https://example.com    # HTTP response headers
-sudo tcpdump -ni eth0 host 10.0.0.5
-```
-
-Packet captures may contain sensitive information. Capture only traffic you are authorized to inspect.
-
-## 1.7 SSH, Firewall and Hardening
-
-```
-ssh user@server
-scp file.txt user@server:/tmp/
-sudo sshd -t                   # Validate SSH configuration
-sudo systemctl reload ssh
-sudo ufw status verbose
-sudo ufw allow from 10.10.0.0/24 to any port 22 proto tcp
-sudo ufw deny 23/tcp
-sudo nft list ruleset
-```
-
-Before changing SSH or firewall settings remotely:
-
-1. Confirm the required management access is allowed.
-2. Validate configuration.
-3. Keep the current remote session open.
-4. Test a second connection before closing the first.
-
-Linux hardening checklist
-
-- Patch the OS and applications.
-- Remove unnecessary accounts and services.
-- Use individual accounts and least privilege.
-- Prefer SSH keys; restrict SSH to trusted networks.
-- Disable direct root SSH login where appropriate.
-- Avoid world-writable permissions.
-- Enable and review firewall rules.
-- Monitor authentication and system logs.
-- Maintain backups and test restoration.
-
-## 1.8 Linux Quick Troubleshooting
-
-| Symptom              | First checks                                       |
-| -------------------- | -------------------------------------------------- |
-| Slow server          | `uptime`, `top`, `free -h`                         |
-| Disk full            | `df -h`, `du -xhd1 /`, `lsof +L1`                  |
-| Service unavailable  | `systemctl status`, `journalctl -u`                |
-| Interface down       | `ip -br addr`, `ip link`                           |
-| No connectivity      | `ip route`, ping gateway                           |
-| IP works, name fails | `resolvectl status`, `getent hosts`                |
-| Port unavailable     | `ss -lntup`, firewall, remote test                 |
-| Boot problem         | `journalctl -b`, `dmesg -T`                        |
-| SSH fails            | Service status, auth logs, firewall and SSH config |
+---
 
 # 2. Windows Administration
 
-Scope: Windows 10/11 and Windows Server. Distinguish CMD from PowerShell. Run elevated commands only when required; domain policy or Intune may override local settings.
+**Scope:** Windows 10/11 and Windows Server. Distinguish CMD from PowerShell. Domain policy or Intune may override local settings.
 
-## 2.1 Essential Windows Tools
+## 2.1 Essential tools
 
-Open these using `Win + R`:
+Open these with `Win + R` (use Ctrl + Shift + Enter to run as administrator).
 
-| Command        | Purpose                                   |
-| -------------- | ----------------------------------------- |
-| `taskmgr`      | Processes and performance                 |
-| `services.msc` | Services                                  |
-| `eventvwr.msc` | Event Viewer                              |
-| `devmgmt.msc`  | Device Manager                            |
-| `diskmgmt.msc` | Disk Management                           |
-| `ncpa.cpl`     | Network adapters                          |
-| `wf.msc`       | Advanced Windows Firewall                 |
-| `sysdm.cpl`    | System/domain settings                    |
-| `resmon`       | Resource Monitor                          |
-| `perfmon /rel` | Reliability Monitor                       |
-| `taskschd.msc` | Scheduled Tasks                           |
-| `compmgmt.msc` | Computer Management                       |
-| `mstsc`        | Remote Desktop                            |
-| `gpedit.msc`   | Local Group Policy (edition-dependent)    |
-| `secpol.msc`   | Local Security Policy (edition-dependent) |
+| Command | Purpose | Command | Purpose |
+|---|---|---|---|
+| `taskmgr` | Processes/performance | `services.msc` | Services |
+| `eventvwr.msc` | Event Viewer | `devmgmt.msc` | Device Manager |
+| `diskmgmt.msc` | Disk Management | `ncpa.cpl` | Network adapters |
+| `wf.msc` | Advanced Firewall | `firewall.cpl` | Basic Firewall |
+| `sysdm.cpl` | System/domain settings | `msinfo32` | System information |
+| `resmon` | Resource Monitor | `perfmon` | Performance Monitor |
+| `perfmon /rel` | Reliability Monitor | `taskschd.msc` | Scheduled Tasks |
+| `compmgmt.msc` | Computer Management | `mstsc` | Remote Desktop |
+| `gpedit.msc` | Local Group Policy* | `secpol.msc` | Local Security Policy* |
 
-## 2.2 CMD and PowerShell Essentials
+`*` Availability depends on Windows edition.
 
-### CMD
+## 2.2 CMD and PowerShell
 
-```
-whoami /all
-hostname
-systeminfo
-tasklist
-tasklist /svc
-driverquery /v
-net user
-net localgroup
-net localgroup Administrators
+| Command | Explanation | Command | Explanation |
+|---|---|---|---|
+| `whoami /all` | Current user, groups and privileges | `hostname` | Computer name |
+| `systeminfo` | OS, hardware and hotfix details | `ver` | Windows version |
+| `tasklist` | Running processes | `tasklist /svc` | Processes and associated services |
+| `driverquery /v` | Driver information | `net user` | Local users |
+| `net localgroup` | Local groups | `net localgroup Administrators` | Local admin members |
+| `Get-ComputerInfo` | System information | `Get-HotFix` | Installed hotfixes |
+| `Get-Service` | Services | `Get-Process` | Processes |
+| `Get-LocalUser` | Local accounts | `Get-LocalGroupMember -Group Administrators` | Members of local Administrators |
+| `Get-Disk` / `Get-Partition` | Disk/partition inventory | `Get-Volume` | Volumes and free space |
+| `Get-Command <NAME>` | Find command | `Get-Help <CMD> -Examples` | Command examples |
+
+PowerShell pipeline pattern: `Get-Service | Where-Object Status -ne 'Running'`. `Where-Object` filters, `Select-Object` chooses fields and `Sort-Object` sorts results.
+
+Terminate only after verifying the process:
+
+```cmd
 taskkill /PID <PID> /T
 ```
 
-Use `/F` with `taskkill` only when force termination is necessary. Verify the PID first.
+`/F` forces termination; it may cause data loss or interrupt a service.
 
-### PowerShell
+## 2.3 Local users and NTFS permissions
 
-```
-Get-ComputerInfo
-Get-HotFix
-Get-Service
-Get-Process
-Get-LocalUser
-Get-LocalGroup
-Get-LocalGroupMember -Group 'Administrators'
-Get-Disk
-Get-Partition
-Get-Volume
-```
+| Command | Explanation | Command | Explanation |
+|---|---|---|---|
+| `Get-LocalUser` | List local users | `Get-LocalGroup` | List local groups |
+| `Get-LocalGroupMember -Group Administrators` | Review local admins | `Disable-LocalUser -Name <USER>` | Disable account |
+| `Enable-LocalUser -Name <USER>` | Enable account | `Add-LocalGroupMember -Group Administrators -Member <USER>` | Add local admin membership |
+| `icacls C:\Data` | Inspect NTFS ACL | `icacls C:\Data /grant user:(R)` | Grant read |
+| `icacls C:\Data /grant user:(M)` | Grant modify | `icacls C:\Data /remove user` | Remove explicit entry |
 
-Filter and sort objects:
+NTFS rights: **Full Control** (including permission changes/ownership), **Modify** (read/write/delete), **Read & Execute**, **Read**, **Write**. Inherited flags: `(OI)` files, `(CI)` directories; `/T` applies recursively.
 
-```
-Get-Process |
-  Sort-Object CPU -Descending |
-  Select-Object -First 10
+Share permissions and NTFS permissions both affect network-share access. Avoid broad `Everyone: Full Control` permissions. Use standard accounts for daily work and restrict local Administrators membership.
 
-Get-Service |
-  Where-Object Status -ne 'Running'
-```
+## 2.4 Processes, services and scheduled tasks
 
-Useful pipeline commands: `Where-Object` (filter), `Select-Object` (choose fields), `Sort-Object` (sort), `Format-Table` (display).
+| Command | Explanation | Command | Explanation |
+|---|---|---|---|
+| `Get-Process` | List processes | `Get-Process <NAME>` | Find process |
+| `Stop-Process -Name <NAME>` | Stop process | `taskkill /IM <NAME>.exe` | Stop by image name |
+| `Get-Service` | List services | `Get-Service <NAME>` | Inspect service |
+| `Start-Service <NAME>` | Start service | `Restart-Service <NAME>` | Restart service |
+| `Stop-Service <NAME>` | Stop service | `sc qc <NAME>` | Inspect service config |
+| `Get-ScheduledTask` | List scheduled tasks | `schtasks /query /fo LIST /v` | Detailed task inventory |
 
-## 2.3 Users, Groups and NTFS Permissions
+Before stopping a service, inspect its dependencies, startup type and service account. For scheduled tasks, check trigger, action, execution account and last result.
 
-```
-Get-LocalUser
-Get-LocalGroup
-Get-LocalGroupMember -Group 'Administrators'
+## 2.5 Event logs
 
-$password = Read-Host "Password" -AsSecureString
-New-LocalUser -Name "anna" -Password $password
-Add-LocalGroupMember -Group 'Administrators' -Member 'anna'
-Disable-LocalUser -Name 'anna'
-Enable-LocalUser -Name 'anna'
-```
+Open `eventvwr.msc`. Main logs: **System** (drivers/services/boot), **Application** (application errors), **Security** (logons/account activity), **Setup** (installation/updates).
 
-Use standard accounts for daily work. Keep local Administrators membership small and review it regularly.
-
-### NTFS permissions
-
-| Permission     | Meaning                                               |
-| -------------- | ----------------------------------------------------- |
-| Full Control   | Read, write, delete, change permissions and ownership |
-| Modify         | Read, write, execute and delete                       |
-| Read & Execute | Read files and run programs                           |
-| Read           | View contents                                         |
-| Write          | Create or modify                                      |
-
-```
-icacls C:\Data
-icacls C:\Data /grant anna:(R)
-icacls C:\Data /grant anna:(M)
-icacls C:\Data /grant anna:(OI)(CI)M /T
-```
-
-`OI` = inherit to files; `CI` = inherit to directories; `/T` = recursive. Share permissions and NTFS permissions both affect network-share access. Avoid broad `Everyone: Full Control` permissions.
-
-## 2.4 Processes, Services and Scheduled Tasks
-
-```
-Get-Process
-Get-Process -Name notepad
-Stop-Process -Name notepad
-
-Get-Service
-Get-Service -Name Spooler
-Restart-Service -Name Spooler
-
-Get-CimInstance Win32_Service |
-  Select-Object Name, State, StartMode, StartName, PathName
-
-Get-ScheduledTask
-```
-
-CMD alternatives:
-
-```
-tasklist
-taskkill /IM notepad.exe
-sc query
-sc qc Spooler
-schtasks /query /fo LIST /v
-```
-
-Before stopping a process or service, check its purpose, dependencies and impact. For scheduled tasks, inspect the trigger, action, execution account and last result.
-
-## 2.5 Event Viewer and Logs
-
-Open `eventvwr.msc`.
-
-| Log         | Typical content                       |
-| ----------- | ------------------------------------- |
-| System      | Drivers, services, boot and hardware  |
-| Application | Application errors and crashes        |
-| Security    | Logons, account and security activity |
-| Setup       | Installation and update events        |
-
-PowerShell:
-
-```
-Get-WinEvent -LogName System -MaxEvents 50
-Get-WinEvent -LogName Application -MaxEvents 50
-
-Get-WinEvent -FilterHashtable @{
-  LogName = 'Security'
-  Id = 4624,4625
-} -MaxEvents 30
-```
+| Command | Explanation | Command | Explanation |
+|---|---|---|---|
+| `Get-WinEvent -LogName System -MaxEvents 50` | Recent System events | `Get-WinEvent -LogName Application -MaxEvents 50` | Recent Application events |
+| `Get-WinEvent -FilterHashtable @{LogName='Security';Id=4624,4625} -MaxEvents 30` | Recent successful/failed logons | `perfmon /rel` | Reliability history |
 
 Important Security Event IDs:
 
-| ID          | Meaning                               |
-| ----------- | ------------------------------------- |
-| 4624        | Successful logon                      |
-| 4625        | Failed logon                          |
-| 4648        | Explicit credentials used             |
-| 4672        | Special privileges assigned           |
-| 4688        | Process created (if auditing enabled) |
-| 4697        | Service installed                     |
-| 4698        | Scheduled task created                |
-| 4720        | User account created                  |
-| 4728 / 4732 | Member added to a security group      |
+| ID | Meaning | ID | Meaning |
+|---:|---|---:|---|
+| 4624 | Successful logon | 4625 | Failed logon |
+| 4648 | Explicit credentials used | 4672 | Special privileges assigned |
+| 4688 | Process created (if audited) | 4697 / 7045 | Service installed |
+| 4698 | Scheduled task created | 4720 | User account created |
+| 4728 | Added to global security group | 4732 | Added to local security group |
 
-Events depend on audit configuration and log retention. Missing events do not prove an action did not occur.
+Events depend on audit configuration and log retention. Missing events do not prove an action did not happen.
 
-## 2.6 Storage, Networking and Repair
+## 2.6 Storage, networking and repair
 
-### Storage
+| Command | Explanation | Command | Explanation |
+|---|---|---|---|
+| `Get-Disk` | Physical disks | `Get-Partition` | Partitions |
+| `Get-Volume` | Filesystems and free space | `diskmgmt.msc` | GUI disk management |
+| `ipconfig /all` | Full IP configuration | `ipconfig /flushdns` | Clear DNS cache |
+| `ipconfig /release` / `/renew` | Release/renew DHCP IPv4 lease | `arp -a` | ARP cache |
+| `ping <HOST>` | ICMP reachability | `tracert <HOST>` | Trace route |
+| `pathping <HOST>` | Route and loss diagnostics | `nslookup <NAME>` | DNS query |
+| `netstat -ano` | Connections/listeners and PIDs | `route print` | Routing table |
+| `Get-NetAdapter` | Adapter state | `Get-NetIPConfiguration` | IP, gateway and DNS |
+| `Get-NetRoute` | Routing table | `Resolve-DnsName <NAME>` | DNS resolution |
+| `Test-NetConnection <HOST> -Port <PORT>` | Test TCP port | `Get-NetTCPConnection -State Listen` | Listening TCP ports |
 
-```
-Get-Disk
-Get-Partition
-Get-Volume
-Get-Volume | Select-Object DriveLetter, FileSystem, Size, SizeRemaining
-```
+**Network diagnostic order:** adapter/link → IP/subnet/gateway/DNS → gateway reachability → external IP → DNS lookup → required TCP port. A failed ping does not prove a host is offline; ICMP may be blocked. Do not run `ipconfig /release` over remote access unless alternative access exists.
 
-Open `diskmgmt.msc` for graphical disk management. Formatting, initializing or repartitioning can destroy data; verify the disk and backup first.
+Repair Windows system files in an elevated terminal:
 
-### Networking
-
-```
-ipconfig /all
-ipconfig /flushdns
-ipconfig /release
-ipconfig /renew
-ping <HOST>
-tracert <HOST>
-pathping <HOST>
-nslookup example.com
-netstat -ano
-arp -a
-```
-
-```
-Get-NetAdapter
-Get-NetIPConfiguration
-Get-NetRoute
-Get-NetNeighbor
-Resolve-DnsName example.com
-Test-NetConnection <HOST> -Port <PORT>
-Get-NetTCPConnection -State Listen
-```
-
-Basic diagnostic order
-
-1. Check adapter status.
-2. Check IP address, subnet, gateway and DNS.
-3. Ping loopback and the default gateway.
-4. Test an external IP.
-5. Test DNS resolution.
-6. Test the required TCP port.
-
-A failed ping alone does not prove a host is offline; ICMP may be blocked. Avoid `ipconfig /release` over remote access unless you have an alternative connection.
-
-### Windows repair and updates
-
-Run in an elevated terminal:
-
-```
+```cmd
 DISM /Online /Cleanup-Image /RestoreHealth
 sfc /scannow
 ```
 
-Check installed updates:
+Check updates with `Get-HotFix` or open `ms-settings:windowsupdate`. Use maintenance windows, plan restarts and verify services afterward.
 
-```
-Get-HotFix
-```
+## 2.7 Windows firewall and hardening
 
-Use Windows Update (`ms-settings:windowsupdate`). Follow maintenance windows, plan restarts and verify services after patching.
+| Command | Explanation | Command | Explanation |
+|---|---|---|---|
+| `Get-NetFirewallProfile` | Firewall profile state | `Get-NetFirewallRule -Enabled True` | Enabled rules |
+| `wf.msc` | Advanced firewall rules | `Get-MpComputerStatus` | Defender status |
 
-## 2.7 Windows Firewall and Hardening
+Keep firewall and approved endpoint protection enabled. Block unsolicited inbound traffic by default where appropriate; allow only required services. Restrict RDP to trusted networks and approved users. Patch Windows/apps, use MFA, review local admins and logs, disable unnecessary services and maintain tested backups.
 
-```
-Get-NetFirewallProfile |
-  Format-Table Name, Enabled, DefaultInboundAction
+## 2.8 Windows quick troubleshooting
 
-Get-NetFirewallRule -Enabled True |
-  Select-Object DisplayName, Direction, Action
-```
+| Symptom | First checks | Symptom | First checks |
+|---|---|---|---|
+| Slow/high CPU | Task Manager, `resmon`, `Get-Process` | Service unavailable | `Get-Service`, Event Viewer |
+| Application crash | Application log, Reliability Monitor | No network | `ipconfig /all`, adapter, gateway |
+| IP works, name fails | `Resolve-DnsName`, DNS cache | Port unavailable | `Test-NetConnection` |
+| Disk full | `Get-Volume`, Disk Management | System file corruption | DISM, then SFC |
+| Suspicious login | Security log, IDs 4624/4625 | Unexpected process | Process path, signature, parent |
 
-Open `wf.msc` to manage advanced firewall rules.
-
-Windows hardening checklist
-
-- Keep Windows and applications patched.
-- Use standard accounts for daily work.
-- Restrict local Administrators membership.
-- Enable MFA where available.
-- Keep Defender or approved endpoint protection active.
-- Keep Windows Firewall enabled.
-- Disable unnecessary services and remote access.
-- Restrict RDP to trusted networks and approved users.
-- Review privileged accounts and Security logs.
-- Maintain tested backups.
-- Follow organizational GPO/Intune policies.
-
-## 2.8 Windows Quick Troubleshooting
-
-| Symptom                | First checks                               |
-| ---------------------- | ------------------------------------------ |
-| Slow computer/high CPU | Task Manager, `resmon`, `Get-Process`      |
-| Service unavailable    | `Get-Service`, Services, Event Viewer      |
-| Application crashes    | Application log, Reliability Monitor       |
-| No network             | `ipconfig /all`, `Get-NetAdapter`, gateway |
-| IP works, name fails   | `Resolve-DnsName`, `ipconfig /flushdns`    |
-| Port unavailable       | `Test-NetConnection <HOST> -Port <PORT>`   |
-| Disk full              | `Get-Volume`, Disk Management              |
-| System file corruption | DISM, then SFC                             |
-| Suspicious login       | Security log, IDs 4624/4625                |
+---
 
 # 3. Windows Server and Active Directory
 
-Scope: Windows Server, AD DS, domain accounts, Group Policy, DNS and DHCP.
+## 3.1 Common server roles
 
-## 3.1 Server Roles
+| Role | Purpose | Role | Purpose |
+|---|---|---|---|
+| AD DS | Directory and identity | DNS | Name resolution |
+| DHCP | Automatic IP configuration | File Services | File shares/storage |
+| Hyper-V | Virtual machines | IIS | Web hosting |
+| Remote Desktop Services | Remote desktop/apps |  |  |
 
-| Role                      | Purpose                             |
-| ------------------------- | ----------------------------------- |
-| AD DS                     | Central identity and directory      |
-| DNS                       | Name resolution                     |
-| DHCP                      | Automatic IP configuration          |
-| File and Storage Services | File shares and storage             |
-| Hyper-V                   | Virtual machines                    |
-| IIS                       | Web hosting                         |
-| Remote Desktop Services   | Remote desktop/application delivery |
+`Get-WindowsFeature` lists installed/available roles. Example installation: `Install-WindowsFeature DNS -IncludeManagementTools`. Installing AD DS is not the same as promoting a server to a domain controller.
 
-```
-Get-WindowsFeature
-Install-WindowsFeature -Name DNS -IncludeManagementTools
-```
+## 3.2 AD concepts
 
-Installing AD DS is not the same as promoting a server to a domain controller.
+| Term | Meaning | Term | Meaning |
+|---|---|---|---|
+| Forest | Top-level AD structure | Domain | Directory/administrative boundary |
+| OU | Organises objects; GPO/delegation scope | DC | Server hosting AD DS/authentication |
+| Global Catalog | Locates objects across forest | Site | Represents network topology/replication |
+| Trust | Allows authentication across domains/forests | GPO | Central user/computer configuration |
 
-## 3.2 Active Directory Concepts
+Typical structure: forest `company.local` → domain → OUs for Users, Computers, Servers and Groups.
 
-AD DS centrally manages users, computers, groups and resources.
+## 3.3 Domain controller deployment and health
 
-| Term                   | Meaning                                               |
-| ---------------------- | ----------------------------------------------------- |
-| Forest                 | Top-level AD structure                                |
-| Domain                 | Directory and administrative boundary                 |
-| OU                     | Organizes objects; scope for GPO and delegation       |
-| Domain Controller (DC) | Hosts AD DS and authenticates users                   |
-| Global Catalog         | Helps locate objects across the forest                |
-| Site                   | Represents network topology and replication locations |
-| Trust                  | Enables authentication across domains/forests         |
+Basic sequence: install Server → configure static IP and AD DNS → name server → install AD DS role → promote as new/existing DC → verify DNS, authentication and replication. Production environments normally use multiple DCs for availability.
 
-Typical structure:
-
-```
-Forest: company.local
-└── Domain: company.local
-    ├── OU: Users
-    ├── OU: Computers
-    ├── OU: Servers
-    └── OU: Groups
-```
-
-## 3.3 Domain Controller Setup and Health
-
-Basic deployment:
-
-1. Install Windows Server.
-2. Set a static IP and correct DNS.
-3. Set the computer name.
-4. Install AD DS.
-5. Promote to a new or existing domain controller.
-6. Verify DNS, authentication and replication.
-
-```
+```powershell
 Install-WindowsFeature AD-Domain-Services -IncludeManagementTools
+Install-ADDSForest -DomainName "company.local"   # New forest; planned deployment only
 ```
 
-Example lab deployment of a new forest:
+Promotion requires planning, credentials and restart. Do not run the forest command on an existing production server without an approved design.
 
-```
-Install-ADDSForest -DomainName "company.local"
-```
+| Command | Explanation | Command | Explanation |
+|---|---|---|---|
+| `dcdiag` | DC health tests | `dcdiag /v` | Detailed DC diagnostics |
+| `repadmin /replsummary` | Replication summary | `repadmin /showrepl` | Replication partners/status |
+| `echo %LOGONSERVER%` | DC used by current logon | `Get-ADDomainController -Filter *` | List DCs |
 
-Promotion requires planning, appropriate credentials and a restart. Do not run this on a production server without confirming the design.
+## 3.4 Users and groups
 
-Check DC health:
+Tools: `dsa.msc` (AD Users and Computers), `gpmc.msc` (Group Policy), PowerShell ActiveDirectory module.
 
-```
-dcdiag
-dcdiag /v
-repadmin /replsummary
-repadmin /showrepl
-echo %LOGONSERVER%
-```
+| Command | Explanation | Command | Explanation |
+|---|---|---|---|
+| `Get-ADUser -Filter *` | List users | `Get-ADUser <USER> -Properties *` | Inspect user properties |
+| `Disable-ADAccount <USER>` | Disable account | `Enable-ADAccount <USER>` | Enable account |
+| `Unlock-ADAccount <USER>` | Unlock account | `Get-ADGroupMember <GROUP>` | List group members |
+| `Add-ADGroupMember <GROUP> -Members <USER>` | Add user to group | `Get-ADGroupMember "Domain Admins"` | Review privileged membership |
 
-## 3.4 Users and Groups
+Set an account password safely:
 
-Management tools:
-
-- `dsa.msc` — Active Directory Users and Computers.
-- `gpmc.msc` — Group Policy Management.
-- PowerShell ActiveDirectory module.
-
-```
-Import-Module ActiveDirectory
-Get-ADUser -Filter *
-Get-ADUser jsmith -Properties Enabled,LockedOut,LastLogonDate
-
-New-ADUser `
-  -Name "John Smith" `
-  -SamAccountName "jsmith" `
-  -UserPrincipalName "jsmith@company.local" `
-  -Path "OU=Users,DC=company,DC=local"
-
-Disable-ADAccount jsmith
-Enable-ADAccount jsmith
-Unlock-ADAccount jsmith
+```powershell
+$pw = Read-Host "New password" -AsSecureString
+Set-ADAccountPassword -Identity <USER> -Reset -NewPassword $pw
 ```
 
-Use group-based access rather than assigning permissions individually.
+Create a user/group only after confirming the correct OU, naming convention and account requirements. Use groups to assign access rather than granting permissions user by user.
 
-| Group scope  | Typical use                                 |
-| ------------ | ------------------------------------------- |
-| Global       | Organize users from the same domain         |
-| Domain Local | Assign permissions to resources in a domain |
-| Universal    | Group members across domains in a forest    |
-
-```
-New-ADGroup -Name "IT-Support" -GroupScope Global `
-  -GroupCategory Security -Path "OU=Groups,DC=company,DC=local"
-
-Add-ADGroupMember -Identity "IT-Support" -Members "jsmith"
-Get-ADGroupMember "IT-Support"
-```
+Group scopes: **Global** (organise users from a domain), **Domain Local** (assign permissions to resources in a domain), **Universal** (members across domains in a forest).
 
 ## 3.5 Group Policy
 
-GPO centrally configures users and computers: password policy, firewall, updates, security settings, scripts and mapped drives.
+GPO centrally configures password/account policy, firewall, updates, security settings, scripts and mapped drives. Typical processing order is **LSDOU**: Local → Site → Domain → OU (parent to child). Inheritance, link order and security filtering can change the result.
 
-GPOs can be linked to sites, domains and OUs. Typical processing order is LSDOU: Local → Site → Domain → OU (parent to child). Inheritance, link order and filtering can change the result.
+| Command | Explanation | Command | Explanation |
+|---|---|---|---|
+| `gpupdate /force` | Refresh policies | `gpresult /r` | Show applied policies |
+| `gpresult /h C:\Temp\gpo.html` | Create HTML report | `gpmc.msc` | Manage GPOs |
 
-```
-gpupdate /force
-gpresult /r
-gpresult /h C:\Temp\gpo-report.html
-```
+If a GPO does not apply, check OU placement, filtering, inheritance, replication and whether the setting is under User or Computer Configuration.
 
-If a GPO does not apply, check OU placement, security filtering, inheritance, replication and User vs Computer Configuration.
+## 3.6 DNS and DHCP in a domain
 
-## 3.6 DNS and DHCP
+DNS is essential for AD; clients use DNS SRV records to locate domain controllers.
 
-### DNS
+| Record | Purpose | Record | Purpose |
+|---|---|---|---|
+| A / AAAA | Name → IPv4 / IPv6 | CNAME | Alias |
+| MX | Mail server | PTR | Reverse lookup |
+| SRV | Locate services/DCs |  |  |
 
-AD relies on DNS to locate domain controllers and services.
-
-| Record   | Purpose                      |
-| -------- | ---------------------------- |
-| A / AAAA | Name to IPv4 / IPv6 address  |
-| CNAME    | Alias                        |
-| MX       | Mail server                  |
-| PTR      | Reverse lookup               |
-| SRV      | Locates services such as DCs |
-
-```
+```powershell
 Resolve-DnsName company.local
 Resolve-DnsName -Type SRV _ldap._tcp.dc._msdcs.company.local
 ```
 
-```
-nslookup company.local
-ipconfig /all
-ipconfig /flushdns
-```
+DHCP provides address, subnet, gateway, DNS and lease details. DORA = **Discover → Offer → Request → Acknowledge**. Check service/authorisation, active scope, free leases, correct options and DHCP relay/IP helper between VLANs. DHCP need not run on a DC.
 
-Incorrect DNS is a common cause of domain join and authentication failures. Domain clients should use the organization's AD DNS servers.
+## 3.7 Authentication, ports and domain join
 
-### DHCP
+- **Kerberos:** AD authentication using tickets; relies on DNS and accurate time.
+- **LDAP:** Protocol for querying/managing directory information.
 
-DHCP supplies IP address, subnet mask, gateway, DNS and lease information.
+| Port | Service | Port | Service |
+|---:|---|---:|---|
+| TCP/UDP 88 | Kerberos | TCP/UDP 389 | LDAP |
+| TCP 636 | LDAPS | TCP/UDP 53 | DNS |
+| UDP 123 | NTP | TCP 445 | SMB |
 
-DORA: Discover → Offer → Request → Acknowledge.
+Before domain join, configure AD DNS, verify DC reachability and time, and use authorised credentials:
 
-Check:
-
-- DHCP service and authorization.
-- Active scope and available addresses.
-- Correct gateway and DNS options.
-- DHCP relay/IP helper between VLANs.
-- Client's network/VLAN.
-
-DHCP can run on a separate server or network device; it does not have to run on a DC.
-
-## 3.7 Kerberos, LDAP and Domain Join
-
-- Kerberos: AD authentication using tickets; depends on DNS and accurate time.
-- LDAP: Protocol for querying and managing directory information.
-
-| Port        | Service  |
-| ----------- | -------- |
-| TCP/UDP 88  | Kerberos |
-| TCP/UDP 389 | LDAP     |
-| TCP 636     | LDAPS    |
-| TCP/UDP 53  | DNS      |
-| UDP 123     | NTP      |
-| TCP 445     | SMB      |
-
-Use secure LDAP transport where required. Do not expose directory services to untrusted networks.
-
-Before joining a computer to a domain, verify DNS points to AD DNS, the DC is reachable, time is synchronized and authorized credentials are available.
-
-```
-Add-Computer -DomainName "company.local" -Credential "COMPANY\Administrator" -Restart
-
-Get-CimInstance Win32_ComputerSystem |
-  Select-Object Name, Domain, PartOfDomain
+```powershell
+Add-Computer -DomainName "company.local" -Credential "COMPANY\AdminUser" -Restart
 ```
 
-## 3.8 Replication and AD Troubleshooting
+## 3.8 AD troubleshooting and security
 
-```
-repadmin /replsummary
-repadmin /showrepl
-```
+| Symptom | First checks | Symptom | First checks |
+|---|---|---|---|
+| Cannot join domain | DNS, DC reachability, time, credentials | Login fails | Enabled/locked account, password, DC, time |
+| Repeated lockout | Security logs, saved credentials, tasks/services | GPO missing | `gpresult`, OU, filtering, replication |
+| DC not found | DNS SRV records, DNS server, network | Replication issue | `repadmin`, DNS, connectivity |
+| Kerberos fails | Time, DNS, account/SPN | Slow logon | DNS, DC, GPO, network |
 
-Force replication only when appropriate:
+Useful checks: `ipconfig /all`, `nslookup company.local`, `dcdiag`, `repadmin /replsummary`, `gpresult /r`, `Get-ADDomain`, `Get-ADForest`.
 
-```
-repadmin /syncall /AdeP
-```
+**AD security:** separate privileged accounts; minimise Domain Admin membership; use MFA where supported; patch and restrict DCs; monitor logons and privileged group changes; review stale accounts/computers; maintain and test AD-aware backups. DC compromise can compromise domain identity and access.
 
-Do not use forced replication as a substitute for fixing DNS, connectivity, time or DC health.
-
-| Symptom                       | First checks                                      |
-| ----------------------------- | ------------------------------------------------- |
-| Cannot join domain            | DNS, DC reachability, time, credentials           |
-| User cannot log in            | Account enabled/locked, password, DC, time        |
-| Account repeatedly locks      | Security logs, saved credentials, tasks, services |
-| GPO not applying              | `gpresult`, OU, filtering, replication            |
-| DC cannot be located          | DNS SRV records, DNS server, network              |
-| Changes missing on another DC | `repadmin`, DNS, connectivity                     |
-| Kerberos fails                | Time, DNS, account/SPN configuration              |
-| Slow domain logon             | DNS, DC availability, GPO, network                |
-
-Useful commands:
-
-```
-ipconfig /all
-nslookup company.local
-gpupdate /force
-gpresult /r
-dcdiag
-repadmin /replsummary
-```
-
-```
-Get-ADDomain
-Get-ADForest
-Get-ADDomainController -Filter *
-Get-ADGroupMember "Domain Admins"
-```
-
-AD security checklist
-
-- Use separate privileged accounts.
-- Minimize Domain Admin membership.
-- Enable MFA for administrative access where supported.
-- Patch and restrict access to domain controllers.
-- Monitor logons and privileged group changes.
-- Review inactive accounts and stale computer objects.
-- Maintain and test AD-aware backups.
-- Monitor DNS, time and replication health.
+---
 
 # 4. Networking Fundamentals and Protocols
 
-## 4.1 OSI and TCP/IP Models
+## 4.1 Models and encapsulation
 
-| OSI layer | Name         | Function / examples                  |
-| --------- | ------------ | ------------------------------------ |
-| 7         | Application  | HTTP, DNS, SMTP, SSH                 |
-| 6         | Presentation | Data format, encryption, compression |
-| 5         | Session      | Session management                   |
-| 4         | Transport    | TCP, UDP, ports                      |
-| 3         | Network      | IPv4, IPv6, ICMP, routing            |
-| 2         | Data Link    | Ethernet, Wi-Fi, VLAN, MAC           |
-| 1         | Physical     | Copper, fiber, radio                 |
+| OSI layer | Name | Examples / purpose |
+|---:|---|---|
+| 7 | Application | HTTP, DNS, SMTP, SSH |
+| 6 | Presentation | Data format, encryption, compression |
+| 5 | Session | Session management |
+| 4 | Transport | TCP, UDP, ports |
+| 3 | Network | IPv4/IPv6, ICMP, routing |
+| 2 | Data Link | Ethernet, Wi-Fi, VLAN, MAC |
+| 1 | Physical | Copper, fiber, radio |
 
-TCP/IP groups these into Application (OSI 5–7), Transport (4), Internet (3), Network Access (1–2).
+TCP/IP combines OSI 5–7 as Application, 4 as Transport, 3 as Internet and 1–2 as Network Access.
 
-Encapsulation:
-
-`Application data → TCP segment/UDP datagram → IP packet → Ethernet frame → bits`
-
-- IP addresses identify endpoints across networks.
-- MAC addresses identify interfaces on the local network segment.
-- Routers replace Layer 2 framing at each hop; IP addresses normally remain end-to-end unless NAT modifies them.
+Encapsulation: **data → TCP segment/UDP datagram → IP packet → Ethernet frame → bits**. IP addresses identify endpoints across networks; MAC addresses deliver frames on the local segment. Routers replace Layer 2 framing at each hop.
 
 ## 4.2 TCP, UDP, Ethernet and ARP
 
-| TCP                                | UDP                            |
-| ---------------------------------- | ------------------------------ |
-| Connection-oriented                | Connectionless                 |
-| Reliable, ordered delivery         | No built-in delivery guarantee |
-| Acknowledgements/retransmissions   | Lower overhead                 |
-| Common for web, SSH, file transfer | Common for DNS, voice/video    |
+| TCP | UDP |
+|---|---|
+| Connection-oriented; reliable and ordered | Connectionless; no built-in delivery guarantee |
+| Acknowledgements and retransmissions | Lower overhead |
+| Common for web, SSH and file transfer | Common for DNS, voice/video and latency-sensitive traffic |
 
-TCP handshake: `SYN → SYN-ACK → ACK`. `FIN` closes normally; `RST` resets a connection.
+TCP handshake: **SYN → SYN-ACK → ACK**. `FIN` closes normally; `RST` resets a connection.
 
-Ethernet is primarily Layer 2. A MAC address is normally 48 bits, shown in hexadecimal, e.g. `00:1A:2B:3C:4D:5E`.
+Ethernet is mainly Layer 2. A MAC address is normally 48-bit hexadecimal. **ARP** maps IPv4 addresses to MAC addresses on a local network; IPv6 uses **NDP**, not ARP.
 
-ARP maps an IPv4 address to a MAC address on the local network. IPv6 uses Neighbor Discovery (NDP), not ARP.
+## 4.3 IPv4 subnetting
 
-## 4.3 IPv4 Addressing and Subnetting
+IPv4 uses 32-bit addresses. Prefix length identifies the network portion.
 
-IPv4 uses 32-bit addresses, usually written as four decimal octets (e.g. `192.168.1.10`).
+| Prefix | Subnet mask | Prefix | Subnet mask |
+|---:|---|---:|---|
+| `/24` | `255.255.255.0` | `/25` | `255.255.255.128` |
+| `/26` | `255.255.255.192` | `/27` | `255.255.255.224` |
+| `/28` | `255.255.255.240` | `/30` | `255.255.255.252` |
 
-An address and prefix identify the network and host portions:
+Typical usable host count: `2^(32-prefix) - 2` (special cases include `/31` and `/32`).
 
-- `/24` = `255.255.255.0`
-- `/25` = `255.255.255.128`
-- `/26` = `255.255.255.192`
-- `/27` = `255.255.255.224`
-- `/28` = `255.255.255.240`
-- `/30` = `255.255.255.252`
+Example: `192.168.10.77/26` → network `192.168.10.64`, broadcast `192.168.10.127`, usable `192.168.10.65–126`.
 
-For a typical IPv4 subnet, usable host addresses are between the network and broadcast addresses. Traditional usable-host count is `2^(32-prefix) - 2` (special cases such as `/31` and `/32` exist).
+| Range | Purpose | Range | Purpose |
+|---|---|---|---|
+| `10.0.0.0/8` | Private | `172.16.0.0/12` | Private |
+| `192.168.0.0/16` | Private | `127.0.0.0/8` | Loopback |
+| `169.254.0.0/16` | Link-local/APIPA | `0.0.0.0/0` | Default route |
 
-Example: `192.168.10.77/26`
+## 4.4 IPv6, DNS, DHCP and NAT
 
-- Mask: `255.255.255.192`
-- Subnet range: `192.168.10.64–192.168.10.127`
-- Network: `192.168.10.64`
-- Broadcast: `192.168.10.127`
-- Usable hosts: `192.168.10.65–192.168.10.126`
+IPv6 uses 128-bit hexadecimal addresses. Key ranges: `::1` loopback, `fe80::/10` link-local, `fc00::/7` unique local, `2000::/3` global unicast, `::/0` default route. NDP replaces ARP. Address configuration can use SLAAC or DHCPv6. Review IPv6 firewall rules as well as IPv4.
 
-Important IPv4 ranges:
+- **DNS:** resolves names; common records A, AAAA, CNAME, MX, PTR, SRV.
+- **DHCP:** assigns address, prefix/mask, gateway, DNS and lease; DORA = Discover, Offer, Request, Acknowledge.
+- **NAT:** translates IP addresses; PAT/NAT overload lets multiple internal devices share a public IP using ports. NAT is not a firewall.
+- **Default gateway:** router/interface used for destinations outside the local subnet.
+- **Routing:** selects the most specific matching route. Default routes: `0.0.0.0/0` and `::/0`.
 
-| Range            | Purpose          |
-| ---------------- | ---------------- |
-| `10.0.0.0/8`     | Private          |
-| `172.16.0.0/12`  | Private          |
-| `192.168.0.0/16` | Private          |
-| `127.0.0.0/8`    | Loopback         |
-| `169.254.0.0/16` | Link-local/APIPA |
-| `0.0.0.0/0`      | Default route    |
+## 4.5 Important ports
 
-## 4.4 IPv6 Basics
+| Service | Port/protocol | Service | Port/protocol |
+|---|---|---|---|
+| FTP control | 21/TCP | SSH/SFTP | 22/TCP |
+| Telnet | 23/TCP | SMTP | 25/TCP |
+| DNS | 53/TCP,UDP | DHCP | 67/68 UDP |
+| TFTP | 69/UDP | HTTP | 80/TCP |
+| Kerberos | 88/TCP,UDP | POP3 | 110/TCP |
+| NTP | 123/UDP | IMAP | 143/TCP |
+| SNMP | 161/162 UDP | LDAP | 389/TCP,UDP |
+| HTTPS | 443/TCP | SMB | 445/TCP |
+| SMTPS/submission | 465/587 TCP | LDAPS | 636/TCP |
+| IMAPS | 993/TCP | POP3S | 995/TCP |
+| RDP | 3389/TCP,UDP |  |  |
 
-IPv6 uses 128-bit addresses, written in hexadecimal groups separated by colons.
+Prefer encrypted protocols such as SSH, HTTPS and LDAPS over Telnet, FTP and unencrypted management services.
 
-- `::1` — loopback.
-- `fe80::/10` — link-local.
-- `fc00::/7` — unique local.
-- `2000::/3` — global unicast.
-- `::/0` — default route.
+---
 
-IPv6 uses NDP for neighbour discovery and supports SLAAC and DHCPv6 for address configuration. Do not assume IPv4 firewall rules protect IPv6 traffic; review both.
-
-## 4.5 DNS, DHCP, NAT and Routing
-
-- DNS: Resolves names to IP addresses. Common records: A, AAAA, CNAME, MX, PTR, SRV.
-- DHCP: Automatically assigns IP configuration. DORA = Discover, Offer, Request, Acknowledge.
-- NAT: Translates addresses. PAT/NAT overload lets multiple internal hosts share a public IP using ports. NAT is not a replacement for a firewall.
-- Default gateway: Router/interface used to reach destinations outside the local subnet.
-- Routing: Routers select the most specific matching route. Default routes are `0.0.0.0/0` (IPv4) and `::/0` (IPv6).
-
-Useful commands:
-
-```
-ip addr
-ip route
-ip route get 8.8.8.8
-```
-
-```
-ipconfig /all
-route print
-nslookup example.com
-```
-
-## 4.6 Important Network Ports
-
-| Service            | Port    | Transport |
-| ------------------ | ------- | --------- |
-| FTP control        | 21      | TCP       |
-| SSH / SFTP         | 22      | TCP       |
-| Telnet             | 23      | TCP       |
-| SMTP               | 25      | TCP       |
-| DNS                | 53      | TCP/UDP   |
-| DHCP server/client | 67/68   | UDP       |
-| TFTP               | 69      | UDP       |
-| HTTP               | 80      | TCP       |
-| Kerberos           | 88      | TCP/UDP   |
-| POP3               | 110     | TCP       |
-| NTP                | 123     | UDP       |
-| IMAP               | 143     | TCP       |
-| SNMP               | 161/162 | UDP       |
-| LDAP               | 389     | TCP/UDP   |
-| HTTPS              | 443     | TCP       |
-| SMB                | 445     | TCP       |
-| SMTPS / submission | 465/587 | TCP       |
-| LDAPS              | 636     | TCP       |
-| IMAPS              | 993     | TCP       |
-| POP3S              | 995     | TCP       |
-| RDP                | 3389    | TCP/UDP   |
-
-Prefer encrypted protocols (SSH, HTTPS, LDAPS) over Telnet, FTP and unencrypted management services.
-
-````
-
-**Part 2 of 2 — Sections 5–10**
-
-```markdown
 # 5. Switching, Routing and Network Infrastructure
 
-## 5.1 Network Devices
+## 5.1 Devices and VLANs
 
-| Device | Main function |
-|---|---|
-| Switch | Connects devices in a LAN; forwards frames using MAC addresses |
-| Router | Connects different IP networks; forwards packets using routes |
-| Layer 3 switch | Switching plus inter-VLAN routing |
-| Firewall | Allows or blocks traffic according to security rules |
-| Access Point | Connects wireless clients to a LAN |
-| Modem/ONT | Connects the local network to the provider's access network |
+| Device | Function | Device | Function |
+|---|---|---|---|
+| Switch | Forwards LAN frames using MAC addresses | Router | Connects IP networks |
+| Layer 3 switch | Switching and inter-VLAN routing | Firewall | Filters traffic |
+| Access point | Wireless LAN access | Modem/ONT | Provider access connection |
 
-## 5.2 VLANs and Switching
+A **VLAN** creates a separate Layer 2 broadcast domain. Commonly separate users, servers, guests and management.
 
-A **VLAN** separates a switched network into logical Layer 2 broadcast domains.
+- **Access port:** one VLAN, usually for an endpoint.
+- **Trunk port:** carries multiple VLANs, usually using 802.1Q tags, between network devices.
 
-Benefits:
-- Separates users, servers, guests and management.
-- Reduces broadcast domains.
-- Supports access control and network organisation.
-
-### Access and trunk ports
-
-- **Access port:** Carries traffic for one VLAN; commonly used for end devices.
-- **Trunk port:** Carries multiple VLANs, usually using IEEE 802.1Q tags; commonly used between switches or to routers.
-
-Cisco IOS examples:
+Cisco IOS examples (syntax varies by platform):
 
 ```text
 show vlan brief
 show interfaces status
 show interfaces trunk
+show mac address-table
+```
 
-configure terminal
+```text
 vlan 10
  name USERS
-interface gigabitEthernet 0/1
+interface gi0/1
  switchport mode access
  switchport access vlan 10
-````
-
-Example trunk configuration (platform-dependent):
-
 ```
-interface gigabitEthernet 0/24
+
+Trunk example:
+
+```text
+interface gi0/24
  switchport mode trunk
  switchport trunk allowed vlan 10,20,30
 ```
 
-Verify the actual platform syntax and existing configuration before applying changes.
+## 5.2 Switching, STP and inter-VLAN routing
 
-## 5.3 MAC Address Learning and STP
+A switch learns source MAC addresses and maps them to ports. Compare:
+- **MAC table:** MAC address → switch port.
+- **ARP table:** IPv4 address → MAC address.
 
-A switch learns source MAC addresses and the ports on which they arrive. It uses this MAC address table to forward frames.
+`show mac address-table` displays learned MACs.
 
-```
-show mac address-table
-show mac address-table dynamic
-```
+**STP (Spanning Tree Protocol)** prevents Layer 2 loops by blocking redundant paths while preserving backup links. Check root bridge and port states with `show spanning-tree`. Avoid changing STP without understanding the topology.
 
-Do not confuse:
+Devices in different VLANs need Layer 3 routing:
+- **Router-on-a-stick:** router subinterfaces over a trunk.
+- **Layer 3 switch:** SVIs provide VLAN gateways.
 
-- MAC table: MAC address → switch port.
-- ARP table: IPv4 address → MAC address.
+Example SVI:
 
-Spanning Tree Protocol (STP) prevents Layer 2 switching loops by blocking redundant paths while keeping them available as backups.
-
-```
-show spanning-tree
-show spanning-tree vlan 10
-```
-
-Check the root bridge and port states when troubleshooting unexpected Layer 2 paths. Avoid changing STP settings without understanding the topology; a loop can disrupt the network.
-
-## 5.4 Inter-VLAN Routing
-
-Devices in different VLANs need Layer 3 routing to communicate.
-
-Common methods:
-
-1. Router-on-a-stick: One router interface uses multiple VLAN subinterfaces over a trunk.
-2. Layer 3 switch: Switched Virtual Interfaces (SVIs) provide gateways for VLANs.
-
-Example SVI configuration (platform-dependent):
-
-```
+```text
 interface vlan 10
  ip address 192.168.10.1 255.255.255.0
  no shutdown
 ```
 
-Verify VLAN membership, trunk allowance, gateway configuration, routing and ACL/firewall rules.
+Verify VLAN membership, trunk allowance, gateway, routing and ACL/firewall rules.
 
-## 5.5 Routing
+## 5.3 Routing and link aggregation
 
-Routers select a route based on the destination IP and the most specific matching prefix.
+- **Static route:** manually configured; suitable for small/predictable networks.
+- **OSPF:** link-state dynamic routing within an organisation/autonomous system.
+- **BGP:** path-vector routing between autonomous systems; used on the internet.
+- **RIP:** older distance-vector protocol with limited scalability.
 
-### Static routes
+Useful checks: `show ip route`, `show ip protocols`, `show ip interface brief`.
 
-Manually configured; useful for small or predictable networks.
+**EtherChannel** combines physical links into one logical link for capacity and redundancy. LACP is commonly used for negotiation. Verify members have compatible speed, duplex, VLAN and trunk settings.
 
-```
-show ip route
-ip route 192.168.20.0 255.255.255.0 192.168.1.2
-```
-
-### Dynamic routing
-
-Routers exchange routing information automatically.
-
-Common protocols:
-
-- OSPF: Link-state routing protocol used within an organisation or autonomous system.
-- BGP: Path-vector protocol used between autonomous systems and widely on the internet.
-- RIP: Older distance-vector protocol; limited scalability.
-
-Useful checks:
-
-```
-show ip route
-show ip protocols
-show ip interface brief
-```
-
-Do not introduce or change routing protocols without understanding route advertisements, metrics, authentication and network impact.
-
-## 5.6 EtherChannel and Physical Infrastructure
-
-EtherChannel combines multiple physical links into one logical link for increased capacity and redundancy. LACP is a common negotiation protocol.
-
-```
+```text
 show etherchannel summary
 show interfaces port-channel
 ```
 
-Members should have compatible speed, duplex, VLAN and trunk settings.
+## 5.4 Physical infrastructure
 
-### Copper, fiber, SFP and PoE
+| Item | Practical checks |
+|---|---|
+| Copper Ethernet | Cable category, distance, connector, link LEDs |
+| Fiber | Single-mode vs multimode, connector cleanliness, optics and distance |
+| SFP/SFP+ | Speed, wavelength, fiber type and compatibility at both ends |
+| PoE | Switch power budget and endpoint power requirement |
 
-- Copper Ethernet: Common for endpoint connections; observe cable category and distance limits.
-- Fiber: Used for longer distances and higher-speed links; single-mode and multimode fiber have different optics and distance characteristics.
-- SFP/SFP+: Pluggable transceivers; verify speed, fiber type, wavelength and compatibility at both ends.
-- PoE: Supplies power over Ethernet to devices such as access points, phones and cameras. Check switch PoE budget and device requirements.
+For a down link, check power, cable/transceiver, port state, speed/duplex and interface errors.
 
-When a link is down, check power, cable, transceiver, link LEDs, port state, speed/duplex and interface errors.
+## 5.5 Cisco IOS verification and safe changes
 
-## 5.7 Essential Cisco IOS Verification
+| Command | Purpose | Command | Purpose |
+|---|---|---|---|
+| `show running-config` | Active configuration | `show startup-config` | Saved configuration |
+| `show interfaces status` | Port state | `show interfaces` | Errors and interface details |
+| `show ip interface brief` | Interface/IP summary | `show vlan brief` | VLAN membership |
+| `show interfaces trunk` | Trunk status | `show spanning-tree` | STP state |
+| `show mac address-table` | Learned MACs | `show ip route` | Routing table |
+| `show etherchannel summary` | Port-channel state | `show logging` | Device logs |
 
-```
-show running-config
-show startup-config
-show interfaces status
-show interfaces
-show ip interface brief
-show vlan brief
-show interfaces trunk
-show mac address-table
-show spanning-tree
-show ip route
-show etherchannel summary
-show logging
-```
+Before a network change: confirm approval and impact; back up configuration; prepare rollback; change one thing; verify interfaces/VLANs/routes/connectivity; inspect logs; save only after successful verification.
 
-### Safe network change procedure
-
-1. Confirm authorisation, objective and affected devices.
-2. Save/export the current configuration.
-3. Check dependencies and expected impact.
-4. Prepare a rollback plan.
-5. Apply one controlled change.
-6. Verify interfaces, VLANs, routes and connectivity.
-7. Check logs and monitoring.
-8. Save the configuration only after successful verification.
+---
 
 # 6. Network and System Troubleshooting
 
-## 6.1 General Method
-
-Use a consistent process:
-
-1. Identify: What is failing, where, when and for whom?
-2. Scope: One user, one device, one VLAN or the whole environment?
-3. Check recent changes: Configuration, updates, cabling, firewall or routing.
-4. Inspect: Collect command output, logs and monitoring data.
-5. Isolate: Test one layer or component at a time.
-6. Fix: Make the smallest authorised and reversible change.
-7. Verify: Test the original function and check for new errors.
-8. Document: Record evidence, cause, fix and rollback.
-
-Do not begin by rebooting devices, disabling firewalls or flushing configurations.
-
-## 6.2 Network Troubleshooting Sequence
-
-Follow the path from the local device toward the destination.
-
-### 1. Physical link and adapter
-
-Check power, cable, Wi-Fi association, link LEDs, adapter state and switch port.
-
-```
-ip -br link
-ip -br addr
-```
-
-```
-Get-NetAdapter
-Get-NetIPConfiguration
-```
-
-### 2. IP configuration
-
-Check address, subnet mask/prefix, gateway and DNS.
-
-```
-ip addr
-ip route
-```
-
-```
-ipconfig /all
-route print
-```
-
-Look for:
-
-- Missing or incorrect IP address.
-- Unexpected `169.254.x.x` IPv4 address (often indicates DHCP failure).
-- Incorrect subnet or gateway.
-- Incorrect DNS server.
-- Duplicate IP address.
-
-### 3. Gateway and local connectivity
-
-```
-ping -c 4 <GATEWAY>
-```
-
-```
-ping <GATEWAY>
-```
-
-If the gateway is unreachable, check local VLAN, Wi-Fi, cabling, switch port, IP settings and gateway availability.
-
-### 4. Routing
-
-```
-ip route
-ip route get <DESTINATION>
-```
-
-```
-route print
-tracert <DESTINATION>
-```
-
-Check the default route, destination route, next hop and return path.
-
-### 5. DNS
-
-If an IP address works but a hostname does not, investigate DNS.
-
-```
-getent hosts example.com
-resolvectl status
-```
-
-```
-Resolve-DnsName example.com
-```
-
-```
-nslookup example.com
-ipconfig /flushdns
-```
-
-Verify the configured DNS server and whether it can resolve the required name.
-
-### 6. Service port
-
-A host can respond to ping while the required application port remains unavailable.
-
-```
-Test-NetConnection <HOST> -Port <PORT>
-```
-
-```
-ss -lntup
-```
-
-Check whether the service is listening, whether the host firewall allows it and whether network firewalls/ACLs block the path.
-
-### 7. Trace the path and inspect packets
-
-```
-tracert <HOST>
-pathping <HOST>
-```
-
-```
-tracepath <HOST>
-sudo tcpdump -ni <INTERFACE> host <IP>
-```
-
-Use packet capture only when needed and only on networks you are authorised to inspect. Captures may contain sensitive information.
-
-### 8. Check logs
-
-Inspect endpoint, server, firewall, switch and router logs around the time of the failure.
-
-## 6.3 Common Network Symptoms
-
-| Symptom                       | Likely areas to check                                |
-| ----------------------------- | ---------------------------------------------------- |
-| No network access             | Link, adapter, VLAN, DHCP, IP settings               |
-| `169.254.x.x` address         | DHCP server, scope, relay, VLAN                      |
-| Gateway unreachable           | Local link, VLAN, subnet, gateway                    |
-| IP works, hostname fails      | DNS client/server, records, resolver                 |
-| One port unavailable          | Service state, host firewall, ACL, routing           |
-| Some VLANs cannot communicate | Inter-VLAN routing, ACLs, gateway                    |
-| Intermittent connection       | Packet loss, duplex, cable, congestion, Wi-Fi        |
-| Only one host affected        | Local configuration, adapter, endpoint firewall      |
-| Multiple hosts affected       | Shared switch, router, DNS, DHCP or upstream service |
-
-A failed ping does not prove a host is offline; ICMP may be filtered.
-
-## 6.4 System Troubleshooting
-
-### High CPU
-
-Linux:
-
-```
-top
-ps aux --sort=-%cpu | head
-```
-
-Windows:
-
-```
-Get-Process | Sort-Object CPU -Descending | Select-Object -First 10
-```
-
-Check the process, recent changes, workload and whether usage is sustained.
-
-### High memory usage
-
-Linux:
-
-```
-free -h
-top
-```
-
-Windows:
-
-```
-Get-Process |
-  Sort-Object WorkingSet64 -Descending |
-  Select-Object -First 10
-```
-
-Check memory pressure, unusual processes and possible leaks.
-
-### Disk space problems
-
-Linux:
-
-```
-df -h
-du -sh /var/log/*
-lsblk
-```
-
-Windows:
-
-```
-Get-Volume
-Get-PSDrive -PSProvider FileSystem
-```
-
-Check free space, large logs, temporary files, application data and disk health. Do not delete logs or application data without checking retention and ownership.
-
-### Service problems
-
-Linux:
-
-```
-systemctl status <SERVICE>
-journalctl -u <SERVICE> --since today
-```
-
-Windows:
-
-```
-Get-Service
-Get-Service -Name <SERVICE>
-```
-
-Check service state, startup type, dependencies, permissions and related logs before restarting.
-
-## 6.5 Safe Troubleshooting Checklist
-
-- Confirm the affected device, user, service and time.
-- Determine whether other devices have the same issue.
-- Record current IP, route and adapter configuration.
-- Check recent changes and relevant logs.
-- Confirm authorisation.
-- Back up configuration before editing.
-- Change one thing at a time.
-- Verify the result.
-- Document the fix and rollback method.
+## 6.1 Repeatable method
+
+1. Identify symptom, time, affected user/device/service.
+2. Determine scope: one host, VLAN, site or whole environment.
+3. Check recent changes.
+4. Collect command output, logs and monitoring evidence.
+5. Isolate one layer/component at a time.
+6. Make the smallest authorised, reversible change.
+7. Verify the original function and inspect for new errors.
+8. Document cause, action, result and rollback.
+
+Do not start by rebooting, disabling firewalls or flushing configuration.
+
+## 6.2 Network checks in order
+
+| Step | What to check | Useful commands |
+|---|---|---|
+| 1. Physical | Power, cable, Wi-Fi, link LEDs, adapter | `ip link`; `Get-NetAdapter` |
+| 2. IP config | Address, prefix/mask, gateway, DNS | `ip addr`; `ipconfig /all` |
+| 3. Gateway | Local subnet and gateway reachability | `ping <GATEWAY>` |
+| 4. Routing | Default route, next hop, return path | `ip route`; `route print`; `tracert` |
+| 5. DNS | Resolver and hostname lookup | `getent hosts`; `Resolve-DnsName`; `nslookup` |
+| 6. Service | Listener, host firewall, network ACL | `ss -lntup`; `Test-NetConnection host -Port <P>` |
+| 7. Path | Where traffic stops or loss appears | `tracepath`; `tracert`; `pathping` |
+| 8. Packets/logs | Capture only if necessary; inspect relevant logs | `tcpdump`; Wireshark; system/device logs |
+
+`169.254.x.x` commonly indicates IPv4 DHCP failure. A failed ping does not prove a host is offline—ICMP may be filtered. Packet captures can contain sensitive data; capture only authorised traffic.
+
+## 6.3 Common symptoms
+
+| Symptom | Likely checks | Symptom | Likely checks |
+|---|---|---|---|
+| No network | Link, adapter, VLAN, DHCP | `169.254.x.x` | DHCP server/scope/relay |
+| Gateway unreachable | Link, VLAN, subnet, gateway | IP works, name fails | DNS server/records/resolver |
+| One port unavailable | Service, host firewall, ACL | Intermittent link | Cable, duplex, congestion, Wi-Fi |
+| One host affected | Local config/adapter/firewall | Many hosts affected | Shared switch/router/DNS/DHCP |
+| VLANs cannot communicate | Inter-VLAN routing, ACL | Slow application | Loss, latency, server resource, DNS |
+
+## 6.4 System checks
+
+| Problem | Linux | Windows |
+|---|---|---|
+| High CPU | `top`; `ps aux --sort=-%cpu \| head` | Task Manager; `Get-Process` sorted by CPU |
+| High memory | `free -h`; `top` | Task Manager; sort by WorkingSet |
+| Disk full | `df -h`; `du -xhd1 /` | `Get-Volume`; Disk Management |
+| Service failure | `systemctl status`; `journalctl -u` | `Get-Service`; Event Viewer |
+| Deleted log still using space | `lsof +L1` | Identify open file/process; use approved tools |
+
+Do not delete application data or logs blindly. Check ownership, retention requirements and what consumes the space before acting.
+
+## 6.5 Troubleshooting checklist
+
+- [ ] Record host, user, time and exact error.
+- [ ] Check whether the issue affects other devices.
+- [ ] Record IP, route, adapter and service state.
+- [ ] Review recent changes and relevant logs.
+- [ ] Confirm authorisation and backup config before editing.
+- [ ] Change one thing at a time; verify and document.
+
+---
 
 # 7. Cybersecurity Fundamentals and System Hardening
 
-## 7.1 Core Principles
+## 7.1 Core principles and threats
 
-| Principle        | Practical meaning                                                     |
-| ---------------- | --------------------------------------------------------------------- |
-| Confidentiality  | Only authorised people access information                             |
-| Integrity        | Prevent unauthorised changes                                          |
-| Availability     | Keep systems and data accessible                                      |
-| Least privilege  | Grant only required permissions                                       |
-| Defense in depth | Use multiple independent controls                                     |
-| Zero Trust       | Verify access explicitly; do not trust based only on network location |
+| Principle | Practical meaning |
+|---|---|
+| Confidentiality | Only authorised people access information |
+| Integrity | Prevent unauthorised changes |
+| Availability | Keep systems/data accessible |
+| Least privilege | Grant only necessary access |
+| Defense in depth | Multiple independent controls |
+| Zero Trust | Verify access explicitly; do not trust network location alone |
 
-Common threats:
+Common threats: malware/ransomware; phishing; password spraying/brute force; stolen credentials; privilege escalation; lateral movement; misconfiguration; denial of service.
 
-- Malware: Ransomware, spyware, trojans and other malicious software.
-- Phishing: Deceptive messages designed to steal credentials or deliver malware.
-- Credential attacks: Password spraying, brute force and stolen credentials.
-- Privilege escalation: Obtaining permissions beyond those authorised.
-- Lateral movement: Moving from one compromised system to another.
-- Misconfiguration: Unnecessary exposure, weak permissions or insecure defaults.
-- Denial of Service: Disrupting service availability.
-
-## 7.2 Identity and Access Management
+## 7.2 Identity and access
 
 - Use individual accounts; avoid shared administrator accounts.
 - Use MFA, especially for privileged and remote access.
-- Use standard accounts for everyday work.
-- Restrict and regularly review administrator/group membership.
-- Disable or remove accounts when no longer required.
-- Use strong, unique passwords and an approved password manager.
-- Review service accounts, credentials and permissions.
-- Apply least privilege to users, services and scheduled tasks.
+- Use standard accounts for daily work.
+- Restrict and review privileged group membership.
+- Disable/remove accounts no longer required.
+- Use unique passwords and an approved password manager.
+- Review service accounts and their permissions.
 
-## 7.3 Linux Hardening
+## 7.3 Host hardening
 
-### Updates and accounts
+| Linux | Windows |
+|---|---|
+| Patch OS/packages: `apt update && apt upgrade` | Patch OS and applications through approved process |
+| Review sudo: `sudo -l` | Review local Administrators membership |
+| Validate SSH: `sshd -t` | Check Defender: `Get-MpComputerStatus` |
+| Review firewall: `ufw status`; `nft list ruleset` | Review firewall: `Get-NetFirewallProfile` |
+| Restrict SSH to authorised users/networks; prefer keys | Restrict RDP; require VPN/gateway and MFA where supported |
+| Avoid `777`; remove unused services/accounts | Disable unnecessary services and remote access |
 
-```
-sudo apt update && sudo apt upgrade
-getent passwd
-sudo -l
-```
+Keep endpoint protection and host firewalls enabled. Avoid direct root SSH login where appropriate. Monitor authentication and privileged activity.
 
-Remove unnecessary software and accounts. Review privileged access.
+## 7.4 Vulnerability and patch management
 
-### SSH
-
-- Prefer key-based authentication where appropriate.
-- Restrict access to authorised users and management networks.
-- Avoid direct root login.
-- Keep OpenSSH updated.
-- Validate configuration before reloading:
-
-```
-sudo sshd -t
-sudo systemctl reload ssh
-```
-
-Keep an existing remote session open until a second connection is verified.
-
-### Permissions and firewall
-
-- Avoid `chmod 777`.
-- Review ownership, permissions and ACLs.
-- Enable only required firewall access.
-- Monitor authentication and system logs.
-
-```
-sudo ufw status verbose
-sudo nft list ruleset
-```
-
-## 7.4 Windows Hardening
-
-- Keep Windows and applications patched.
-- Keep Microsoft Defender or approved endpoint protection enabled.
-- Keep Windows Firewall enabled.
-- Restrict local Administrators membership.
-- Use MFA for privileged and remote access.
-- Disable unnecessary services and remote access.
-- Restrict RDP to trusted networks and approved users.
-- Apply security policy through approved GPO/Intune configuration.
-- Monitor Security and System logs.
-
-Useful checks:
-
-```
-Get-MpComputerStatus
-Get-NetFirewallProfile
-Get-NetFirewallRule -Enabled True
-```
-
-## 7.5 Patching and Vulnerability Management
-
-Practical process:
-
-1. Maintain an inventory of systems and software.
-2. Identify missing security updates and known vulnerabilities.
-3. Prioritise internet-facing, critical and actively exploited systems.
-4. Test updates where appropriate.
+1. Maintain system/software inventory.
+2. Identify missing updates and known vulnerabilities.
+3. Prioritise exposed, critical and actively exploited systems.
+4. Test where appropriate.
 5. Deploy during approved maintenance windows.
 6. Plan restarts and rollback.
-7. Verify patch installation and service health.
-8. Track exceptions and unresolved vulnerabilities.
+7. Verify patch level and service health.
+8. Track exceptions and unresolved risks.
 
-## 7.6 Logging, Integrity and Backups
+## 7.5 Logs, hashes and backups
 
-### Logging
+- Monitor authentication, privileged actions, service/application errors, firewall and endpoint alerts.
+- Protect logs from unauthorised modification; retain according to policy.
+- Hashes help compare file contents; a changed hash is not proof of malware.
 
-Collect and review relevant:
+| Command | Explanation | Command | Explanation |
+|---|---|---|---|
+| `sha256sum <FILE>` | Linux SHA-256 hash | `Get-FileHash <FILE> -Algorithm SHA256` | Windows SHA-256 hash |
 
-- Authentication and account events.
-- Privileged actions.
-- Service and application errors.
-- Firewall and network device events.
-- Endpoint security alerts.
-- Configuration changes.
+**3-2-1 backup rule:** 3 copies, 2 different storage types, 1 off-site or isolated copy. Protect backups from ransomware and test restoration regularly.
 
-Protect logs from unauthorised modification and retain them according to policy.
+## 7.6 Hardening checklist
 
-### File integrity
+- [ ] Patch operating systems and applications.
+- [ ] Remove unnecessary accounts, services and software.
+- [ ] Apply least privilege and MFA.
+- [ ] Restrict remote administration.
+- [ ] Enable host firewalls and endpoint protection.
+- [ ] Review privileged groups and permissions.
+- [ ] Protect and monitor logs.
+- [ ] Maintain isolated backups and test restoration.
+- [ ] Document exceptions and configuration changes.
 
-Use hashes to compare files and detect changes:
-
-```
-sha256sum <FILE>
-```
-
-```
-Get-FileHash <FILE> -Algorithm SHA256
-```
-
-A hash change indicates different file content; it does not by itself prove malicious activity.
-
-### Backups — 3-2-1 rule
-
-- Keep 3 copies of important data.
-- Use 2 different storage types.
-- Keep 1 copy off-site or otherwise isolated.
-
-Protect backups from ransomware and unauthorised access. Test restoration regularly; a successful backup job does not prove that recovery will work.
-
-## 7.7 System Hardening Checklist
-
-- Patch operating systems and applications.
-- Remove unnecessary accounts, services and software.
-- Apply least privilege and MFA.
-- Restrict remote administration.
-- Enable host firewalls and endpoint protection.
-- Review privileged groups and permissions.
-- Centralise and protect logs.
-- Maintain isolated backups and test restoration.
-- Document exceptions and configuration changes.
+---
 
 # 8. Network Security
 
-## 8.1 Firewalls and Traffic Filtering
+## 8.1 Firewalls and filtering
 
-A firewall permits or blocks traffic according to rules based on factors such as source, destination, protocol, port and connection state.
+Firewalls allow/block traffic based on source, destination, protocol, port and connection state.
 
-Common types:
+- **Stateless:** evaluates individual packets.
+- **Stateful:** tracks connection state.
+- **NGFW:** may add application awareness, intrusion prevention and other controls.
+- **Host firewall:** protects an individual endpoint/server.
 
-- Stateless packet filtering: Evaluates individual packets.
-- Stateful firewall: Tracks connection state.
-- Next-generation firewall (NGFW): May include application awareness, intrusion prevention and other controls.
-- Host firewall: Protects an individual endpoint or server.
+Default-deny unsolicited inbound traffic where appropriate. Allow only required services, restrict management access, log relevant events and review/remove obsolete rules.
 
-Practical principles:
+## 8.2 Segmentation and remote access
 
-- Deny unsolicited inbound traffic by default where appropriate.
-- Allow only required services and ports.
-- Restrict management access to trusted networks.
-- Review rules and remove obsolete exceptions.
-- Log relevant denied or suspicious traffic.
+Separate user, server, guest, management and critical networks. VLANs provide Layer 2 separation; ACLs/firewalls control traffic between segments. A VLAN alone does not block routed traffic.
 
-Useful checks:
+| Access method | Minimum practical controls |
+|---|---|
+| SSH | Keys where appropriate, restrict users/source networks, patch and monitor |
+| RDP | Do not expose directly to internet; use VPN/approved gateway, MFA and access restrictions |
+| VPN | Approved encrypted client/protocol, MFA and access only to required networks/services |
 
-```
-sudo ufw status verbose
-sudo nft list ruleset
-```
+## 8.3 Common network controls
 
-```
-Get-NetFirewallProfile
-Get-NetFirewallRule -Enabled True
-```
+| Control | Purpose | Control | Purpose |
+|---|---|---|---|
+| ACL | Permit/deny traffic | IDS | Detect and alert |
+| IPS | Detect and block selected traffic | DHCP snooping | Help block rogue DHCP servers |
+| Dynamic ARP Inspection | Help prevent ARP spoofing | Port security | Restrict MACs on switch ports |
+| 802.1X | Authenticate before network access | SNMPv3 | Secure device monitoring |
+| DNS filtering | Block/alert on domains | Egress filtering | Restrict outbound traffic |
 
-## 8.2 Network Segmentation
+## 8.4 Network security checklist
 
-Separate systems by function and trust level, for example:
+- [ ] Separate user, server, guest and management networks.
+- [ ] Restrict inter-VLAN traffic.
+- [ ] Disable unused switch ports.
+- [ ] Use secure management protocols.
+- [ ] Restrict SSH, RDP and device administration.
+- [ ] Use MFA for remote access.
+- [ ] Prefer SNMPv3.
+- [ ] Monitor firewall and network-device logs.
+- [ ] Review rules and update device firmware.
+- [ ] Back up network-device configurations.
 
-- User workstations.
-- Servers.
-- Guest Wi-Fi.
-- Management interfaces.
-- Security infrastructure.
-- Critical systems.
-
-Use VLANs for Layer 2 separation and ACLs/firewalls to control traffic between segments. A VLAN alone does not prevent all communication if routing permits it.
-
-## 8.3 Secure Remote Administration
-
-### SSH
-
-- Use keys where appropriate.
-- Restrict source networks and authorised users.
-- Avoid direct root login.
-- Keep the server patched.
-- Monitor authentication.
-
-### RDP
-
-- Do not expose RDP directly to the public internet.
-- Use VPN or an approved remote-access gateway.
-- Require MFA where supported.
-- Restrict users and source networks.
-- Keep systems patched and monitor logons.
-
-### VPN
-
-A VPN creates an encrypted connection over an untrusted network. Use approved protocols and clients, MFA and access restrictions. Grant access only to the networks and services required.
-
-## 8.4 Common Network Security Controls
-
-| Control                | Purpose                                          |
-| ---------------------- | ------------------------------------------------ |
-| ACL                    | Permit or deny traffic based on rules            |
-| IDS                    | Detect and alert on suspicious activity          |
-| IPS                    | Detect and block selected malicious traffic      |
-| DHCP snooping          | Help prevent rogue DHCP servers                  |
-| Dynamic ARP Inspection | Help prevent ARP spoofing                        |
-| Port security          | Restrict MAC addresses on switch ports           |
-| 802.1X                 | Authenticate devices/users before network access |
-| SNMPv3                 | Secure network-device monitoring                 |
-| DNS filtering          | Block or alert on selected domains               |
-| Egress filtering       | Restrict outbound connections                    |
-
-Use controls supported by the infrastructure and organisation's security policy.
-
-## 8.5 Network Security Checklist
-
-- Separate user, server, guest and management networks.
-- Restrict inter-VLAN traffic with ACLs or firewalls.
-- Disable unused switch ports.
-- Use secure management protocols.
-- Restrict SSH, RDP and network-device administration.
-- Use MFA for remote access.
-- Prefer SNMPv3.
-- Monitor firewall and network-device logs.
-- Review firewall rules periodically.
-- Update network-device firmware.
-- Back up device configurations.
+---
 
 # 9. SOC, Security Monitoring and Incident Response
 
-## 9.1 SOC Fundamentals
+## 9.1 SOC terms
 
-A Security Operations Center (SOC) monitors systems and networks, investigates security alerts and coordinates incident response.
+| Term | Meaning |
+|---|---|
+| SOC | Team/function monitoring and investigating security activity |
+| SIEM | Centralises and correlates logs/events |
+| EDR | Endpoint detection, investigation and response |
+| IOC | Indicator of compromise, e.g. hash, IP or domain |
+| IOA | Indicator based on suspicious behaviour |
+| TTP | Adversary tactics, techniques and procedures |
+| False positive | Alert that is not a real incident |
+| False negative | Malicious activity not detected |
 
-Typical responsibilities:
+An IOC is an investigative lead, not proof by itself.
 
-- Monitor SIEM, EDR and security alerts.
-- Investigate suspicious activity.
-- Identify affected users, devices and systems.
-- Correlate endpoint, network, identity and cloud events.
-- Escalate incidents.
-- Preserve evidence and document actions.
+## 9.2 Alert triage
 
-| Term           | Meaning                                                          |
-| -------------- | ---------------------------------------------------------------- |
-| SIEM           | Collects and correlates logs and security events                 |
-| EDR            | Detects and investigates endpoint activity; may support response |
-| IOC            | Indicator of compromise, e.g. malicious IP, domain or hash       |
-| IOA            | Indicator of attack, based on suspicious behaviour               |
-| TTP            | Tactics, techniques and procedures used by an attacker           |
-| False positive | Alert that is not a real security incident                       |
-| False negative | Malicious activity that was not detected                         |
+| Check | Questions |
+|---|---|
+| Alert | What rule fired, when, severity, source and reason? |
+| Asset | Which host/IP/user? Who owns it? How critical is it? |
+| Process | Path, command line, hash, signature, parent/child process? |
+| Account | Who ran it? Privileges? Logon type? Expected activity? |
+| Persistence | New service, scheduled task, startup or registry change? |
+| Network | Remote IP/domain, port, DNS query or unusual connection? |
+| Scope | Other affected hosts/accounts or related alerts? |
+| Decision | Benign, suspicious, confirmed or escalate? |
 
-An IOC is a lead for investigation, not proof by itself.
+Do not judge a process by its name alone. Check path, signature, hash, command line, parent process and behaviour.
 
-## 9.2 Alert Triage
+## 9.3 Important Windows events
 
-For each alert, establish:
+| Event ID | Meaning | Event ID | Meaning |
+|---:|---|---:|---|
+| 4624 | Successful logon | 4625 | Failed logon |
+| 4648 | Explicit credentials used | 4672 | Special privileges assigned |
+| 4688 | Process creation (if audited) | 4697 / 7045 | Service installed |
+| 4698 | Scheduled task created | 4720 | User created |
+| 4728 | Added to global security group | 4732 | Added to local security group |
 
-1. Alert details: Rule, severity, time, source and detection reason.
-2. Affected asset: Hostname, IP, user, owner and business importance.
-3. Process context: Process name, path, command line, hash, parent and child processes.
-4. User context: Account, privileges, logon type and whether the activity is expected.
-5. Persistence: New services, scheduled tasks, startup entries or registry changes.
-6. Network activity: Remote IPs/domains, ports, DNS queries and unusual connections.
-7. Scope: Other affected hosts, accounts or related alerts.
-8. Decision: Benign, suspicious, confirmed incident or needs escalation.
+Example query:
 
-Do not decide based only on a process name or file name. Check path, signature, hash, parent process, command line and behaviour.
-
-## 9.3 Important Windows Security Events
-
-| Event ID    | Meaning                                |
-| ----------- | -------------------------------------- |
-| 4624        | Successful logon                       |
-| 4625        | Failed logon                           |
-| 4648        | Explicit credentials used              |
-| 4672        | Special privileges assigned            |
-| 4688        | Process creation (if auditing enabled) |
-| 4697 / 7045 | Service installed                      |
-| 4698        | Scheduled task created                 |
-| 4720        | User account created                   |
-| 4728        | Member added to global security group  |
-| 4732        | Member added to local security group   |
-
-PowerShell search:
-
-```
+```powershell
 Get-WinEvent -FilterHashtable @{
   LogName = 'Security'
   Id = 4624,4625,4688,4697,4698,4720,4728,4732
 } -MaxEvents 100
 ```
 
-Event availability depends on audit configuration and log retention. Check the event's account, timestamp, logon type, source address and surrounding activity.
+Check account, timestamp, logon type, source address and surrounding activity. Event availability depends on audit settings and retention.
 
-## 9.4 Sysmon and Investigation Tools
+## 9.4 Sysmon and investigation tools
 
-Sysmon provides additional Windows telemetry when installed and configured. Event coverage depends on its configuration.
+Sysmon provides extra Windows telemetry; event coverage depends on configuration.
 
-Useful Sysmon Event IDs:
+| Sysmon ID | Activity | Sysmon ID | Activity |
+|---:|---|---:|---|
+| 1 | Process creation | 3 | Network connection |
+| 7 | Image/module loaded | 10 | Process access |
+| 11 | File created | 12–14 | Registry events |
+| 22 | DNS query |  |  |
 
-| ID    | Activity            |
-| ----- | ------------------- |
-| 1     | Process creation    |
-| 3     | Network connection  |
-| 7     | Image/module loaded |
-| 10    | Process access      |
-| 11    | File created        |
-| 12–14 | Registry events     |
-| 22    | DNS query           |
+| Tool | Use | Tool | Use |
+|---|---|---|---|
+| Process Explorer | Process tree/details | Autoruns | Startup/persistence |
+| TCPView | Process network connections | Sysmon | Endpoint telemetry |
+| Defender/EDR | Detection and response | Wireshark/tcpdump | Packet analysis |
+| SIEM | Central event search/correlation |  |  |
 
-Useful tools:
+## 9.5 MITRE ATT&CK examples
 
-| Tool                            | Purpose                                  |
-| ------------------------------- | ---------------------------------------- |
-| Task Manager / Process Explorer | Process tree and process details         |
-| Autoruns                        | Startup and persistence locations        |
-| TCPView                         | Processes and network connections        |
-| Sysmon                          | Additional endpoint telemetry            |
-| Defender / EDR                  | Threat detection and investigation       |
-| Wireshark / tcpdump             | Packet analysis                          |
-| SIEM                            | Centralised event search and correlation |
+| Technique | ID | Example |
+|---|---|---|
+| Command and Scripting Interpreter | T1059 | Shells/scripts |
+| Scheduled Task | T1053.005 | Task-based persistence/execution |
+| Windows Service | T1543.003 | Create/modify service |
+| Registry Run Keys | T1547.001 | Startup persistence |
+| OS Credential Dumping | T1003 | Attempt to obtain credentials |
+| Remote Services | T1021 | Remote access/lateral movement |
+| Impair Defenses | T1562.001 | Disable/weaken security tools |
 
-## 9.5 MITRE ATT&CK
+A technique mapping alone does not prove malicious activity; assess context and evidence.
 
-MITRE ATT&CK is a knowledge base of adversary tactics and techniques. It helps describe observed behaviour and structure investigations.
+## 9.6 Incident response
 
-Examples:
+Follow the organisation's incident response plan:
 
-| Technique                         | ID        | Example                                          |
-| --------------------------------- | --------- | ------------------------------------------------ |
-| Command and Scripting Interpreter | T1059     | Shells and scripts                               |
-| Scheduled Task                    | T1053.005 | Persistence or execution through scheduled tasks |
-| Windows Service                   | T1543.003 | Create or modify a service                       |
-| Registry Run Keys / Startup       | T1547.001 | Persistence through startup locations            |
-| OS Credential Dumping             | T1003     | Attempts to obtain credentials                   |
-| Remote Services                   | T1021     | Remote access/lateral movement                   |
-| Impair Defenses                   | T1562.001 | Disable or weaken security tools                 |
+1. **Identify:** confirm alert and affected systems/accounts.
+2. **Preserve:** record timestamps, logs, hashes, command lines, processes and connections.
+3. **Assess:** determine impact and business criticality.
+4. **Contain:** approved isolation, IOC blocking or session revocation.
+5. **Escalate:** notify incident responders and stakeholders.
+6. **Eradicate/recover:** remove cause, restore safely and verify integrity.
+7. **Monitor:** look for persistence, lateral movement and recurrence.
+8. **Document:** actions, evidence, decisions and lessons learned.
 
-A technique mapping alone is not proof of malicious activity; assess the full context.
+**Do not:** clear logs; disable EDR to dismiss an alert; run suspected malware; delete evidence before collection unless immediate containment requires it; reset passwords without considering sessions/tokens; isolate critical production systems without authorisation and impact assessment.
 
-## 9.6 Incident Response
+**Sequence:** Observe → preserve context → verify → assess impact → escalate or take approved action.
 
-Follow the organisation's incident response plan.
-
-1. Identify: Confirm the alert and affected systems/accounts.
-2. Preserve evidence: Record timestamps, logs, hashes, command lines, processes and connections.
-3. Assess impact: Determine affected hosts, users, services and business criticality.
-4. Contain: Use approved actions, such as endpoint isolation, blocking an IOC or revoking sessions.
-5. Escalate: Notify the incident response team and relevant stakeholders.
-6. Eradicate and recover: Remove the cause, restore systems safely and verify integrity.
-7. Monitor: Look for persistence, lateral movement and recurring activity.
-8. Document: Record evidence, decisions, actions and lessons learned.
-
-Do not:
-
-- Delete suspicious files before evidence is collected, unless immediate containment requires it.
-- Clear event logs.
-- Disable EDR or antivirus to make an alert disappear.
-- Run suspected malware.
-- Reset passwords without considering active sessions, tokens and incident procedures.
-- Isolate critical production systems without considering impact and authorisation.
-
-Remember: Observe → Preserve context → Verify → Assess impact → Escalate or take approved action.
+---
 
 # 10. Essential Administration Procedures and Reference
 
-## 10.1 Before a Change
+## 10.1 Before and after a change
 
-- Confirm the request and authorisation.
-- Identify affected systems, users and services.
-- Check dependencies and expected impact.
-- Record the current configuration.
-- Back up relevant data/configuration.
-- Prepare a rollback procedure.
-- Schedule a maintenance window if required.
-- Notify affected users or teams.
+| Before | After |
+|---|---|
+| Confirm request and authorisation | Verify configuration and service |
+| Identify affected systems/users | Test dependent services |
+| Check dependencies and impact | Check logs and monitoring |
+| Record current configuration | Confirm security controls remain enabled |
+| Back up relevant data/config | Save configuration if appropriate |
+| Prepare rollback and maintenance window | Document result and outstanding risks |
+| Notify affected teams | Close out change record |
 
-## 10.2 After a Change
+## 10.2 Cross-platform command reference
 
-- Verify the configuration.
-- Test the affected service.
-- Confirm dependent services still work.
-- Check logs and monitoring.
-- Confirm security controls remain enabled.
-- Save the configuration if appropriate.
-- Document the result and outstanding issues.
+| Task | Linux | Windows |
+|---|---|---|
+| Current user | `whoami` | `whoami` |
+| Hostname | `hostname` | `hostname` |
+| IP configuration | `ip addr` | `ipconfig /all` |
+| Routing | `ip route` | `route print` |
+| DNS lookup | `getent hosts <NAME>` | `nslookup <NAME>` |
+| Connectivity | `ping <HOST>` | `ping <HOST>` |
+| Trace route | `tracepath <HOST>` | `tracert <HOST>` |
+| Listening ports | `ss -lntup` | `netstat -ano` |
+| Processes | `ps aux` | `Get-Process` |
+| Services | `systemctl` | `Get-Service` |
+| Logs | `journalctl` | Event Viewer / `Get-WinEvent` |
+| Disk space | `df -h` | `Get-Volume` |
+| File hash | `sha256sum <FILE>` | `Get-FileHash <FILE> -Algorithm SHA256` |
 
-## 10.3 Cross-Platform Command Reference
+## 10.3 Incident/change record
 
-| Task             | Linux                 | Windows                                 |
-| ---------------- | --------------------- | --------------------------------------- |
-| Current user     | `whoami`              | `whoami`                                |
-| Hostname         | `hostname`            | `hostname`                              |
-| IP configuration | `ip addr`             | `ipconfig /all`                         |
-| Routing table    | `ip route`            | `route print`                           |
-| DNS lookup       | `getent hosts <NAME>` | `nslookup <NAME>`                       |
-| Connectivity     | `ping <HOST>`         | `ping <HOST>`                           |
-| Trace route      | `tracepath <HOST>`    | `tracert <HOST>`                        |
-| Listening ports  | `ss -lntup`           | `netstat -ano`                          |
-| Processes        | `ps aux`              | `Get-Process`                           |
-| Services         | `systemctl`           | `Get-Service`                           |
-| System logs      | `journalctl`          | Event Viewer / `Get-WinEvent`           |
-| Disk space       | `df -h`               | `Get-Volume`                            |
-| File hash        | `sha256sum <FILE>`    | `Get-FileHash <FILE> -Algorithm SHA256` |
+Record: date/time and timezone; hostname/IP/environment; ticket/incident ID; description; evidence (logs, commands, hashes); action and operator; result; rollback method; follow-up risks.
 
-## 10.4 Incident and Change Documentation
-
-Record for every significant incident or change:
-
-| Field            | Information                           |
-| ---------------- | ------------------------------------- |
-| Date/time        | Include timezone                      |
-| System           | Hostname, IP and environment          |
-| Request/incident | Ticket or incident reference          |
-| Description      | What happened or changed              |
-| Evidence         | Logs, commands, screenshots or hashes |
-| Action           | What was done and by whom             |
-| Result           | Whether the issue was resolved        |
-| Rollback         | How to restore the previous state     |
-| Follow-up        | Remaining risks or required actions   |
-
-## 10.5 Final Operational Rules
+## 10.4 Operational rules
 
 1. Diagnose before changing configuration.
 2. Use least privilege.
@@ -1835,9 +937,9 @@ Record for every significant incident or change:
 4. Keep systems patched and monitored.
 5. Back up configurations and important data.
 6. Test restoration, not just backup creation.
-7. Preserve evidence during security incidents.
+7. Preserve evidence during incidents.
 8. Document changes and verify results.
 9. Follow organisational procedures and escalation paths.
 10. Understand commands before running them with elevated privileges.
 
-Core principle: Make controlled, authorised and reversible changes. Verify the result and leave a clear record for the next administrator.
+**Core principle:** Make controlled, authorised and reversible changes. Verify the result and leave a clear record for the next administrator.
